@@ -33,7 +33,8 @@ function coinLine(c) {
 export function alertText(p) {
   const cats = p.categories.map(id => CATEGORY_BY_ID[id]?.emoji + ' ' + (CATEGORY_BY_ID[id]?.label || id)).join(' · ');
   const lines = [
-    `<b>${TIER[p.tier] || ''}</b>  score ${p.score}${p.heatingUp ? '  ⚡ heating up' : ''}`,
+    `<b>${TIER[p.tier] || ''}</b>  heat ${p.score}${p.meme != null ? ` · 🪙 meme ${p.meme}` : ''}${p.heatingUp ? '  ⚡ heating up' : ''}`,
+    p.memeName || p.ticker ? `🪙 <b>${esc(p.memeName || '')}</b>${p.ticker ? ` → $${esc(p.ticker)}` : ''}` : undefined,
     cats,
     '',
     esc(p.text.slice(0, 280)),
@@ -42,8 +43,8 @@ export function alertText(p) {
     `⚡ ${fmt(p.velocity)} eng/hr · ${fmt(p.viewsPerHour)} views/hr · posted ${ago(p.createdAt)} ago`,
     `👤 @${esc(p.authorHandle)} (${fmt(p.authorFollowers)} followers)`,
   ];
-  if (p.ai?.narrative) lines.push('', `🧠 ${esc(p.ai.narrative)}`, p.ai.ticker ? `💡 Ticker idea: $${esc(p.ai.ticker)}` : '');
-  lines.push('', coinLine(p.coin), '', `<a href="${p.url}">Open on X →</a>`);
+  if (p.ai?.narrative) lines.push('', `🧠 ${esc(p.ai.narrative)}`);
+  lines.push('', coinLine(p.coin), '', `<a href="${p.url}">Open on ${({ x: 'X', tiktok: 'TikTok', instagram: 'Instagram', reddit: 'Reddit' })[p.platform || 'x'] || 'X'} →</a>`);
   return lines.filter(l => l !== undefined).join('\n');
 }
 
@@ -122,7 +123,7 @@ async function handle(msg, dashboardUrl) {
     return tg('sendMessage', {
       chat_id,
       parse_mode: 'HTML',
-      text: `👀 <b>Trench Scout</b> is watching X.\nYou'll get pinged when a post hits heat score ${config.alertScore}+.\n\n/top — top 5 right now\n/stop — pause alerts${dashboardUrl ? `\n\nDashboard: ${dashboardUrl}` : ''}`,
+      text: `👀 <b>Trench Scout</b> is watching X.\nYou'll get pinged when a post hits heat ${config.alertScore}+ AND meme potential ${config.memeAlertScore}+.\n\n/top — top 5 right now\n/stop — pause alerts${dashboardUrl ? `\n\nDashboard: ${dashboardUrl}` : ''}`,
     });
   }
   if (cmd === '/stop') {
@@ -134,7 +135,7 @@ async function handle(msg, dashboardUrl) {
     const top = store.listPosts({ hours: 12, limit: 5 });
     if (!top.length) return tg('sendMessage', { chat_id, text: 'Nothing scanned yet — give it a few minutes.' });
     const text = top
-      .map((p, i) => `${i + 1}. <b>${p.score}</b> ${p.categories.map(c => CATEGORY_BY_ID[c]?.emoji).join('')} ${esc(p.text.slice(0, 90))}…\n   ⚡${fmt(p.velocity)}/hr · ${p.coin?.count === 0 ? '🟢 no coin' : p.coin?.count ? `🟡 ${p.coin.count} coins` : ''} · <a href="${p.url}">open</a>`)
+      .map((p, i) => `${i + 1}. <b>${p.score}</b>${p.meme != null ? `/🪙${p.meme}` : ''} ${p.ticker ? `$${esc(p.ticker)} ` : ''}${p.categories.map(c => CATEGORY_BY_ID[c]?.emoji).join('')} ${esc(p.text.slice(0, 90))}…\n   ⚡${fmt(p.velocity)}/hr · ${p.coin?.count === 0 ? '🟢 no coin' : p.coin?.count ? `🟡 ${p.coin.count} coins` : ''} · <a href="${p.url}">open</a>`)
       .join('\n\n');
     return tg('sendMessage', { chat_id, text, parse_mode: 'HTML', link_preview_options: { is_disabled: true } });
   }

@@ -25,6 +25,8 @@ export const config = {
   telegramChatIds: (process.env.TELEGRAM_CHAT_IDS || '').split(',').map(s => s.trim()).filter(Boolean),
   // Posts at or above this heat score trigger an alert (0-100).
   alertScore: num(process.env.ALERT_SCORE, 70),
+  // ...AND meme potential at or above this (0-100). Lower = more alerts, higher = only clear coin narratives.
+  memeAlertScore: num(process.env.MEME_ALERT_SCORE, 45),
   // Lock the bot so only these Telegram user IDs can /start it (comma-separated). Empty = anyone.
   telegramAllowedUsers: (process.env.TELEGRAM_ALLOWED_USERS || '').split(',').map(s => s.trim()).filter(Boolean),
 

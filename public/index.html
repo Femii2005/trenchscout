@@ -98,6 +98,13 @@
   .coin.free { color: var(--green); background: rgba(61,220,132,.08); }
   .coin.taken { color: var(--gold); background: rgba(255,194,61,.08); }
   .coin a { color: inherit; }
+  .scores { display: flex; gap: 6px; }
+  .score.meme { color: var(--muted); }
+  .score.meme.mid { color: var(--gold); }
+  .score.meme.hi { color: var(--green); }
+  .memeline { font-size: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 10px 12px; border-radius: 14px; background: rgba(255,90,31,.08); }
+  .memeline .tk { color: var(--fire); font-weight: 700; }
+  .memeline .why { flex-basis: 100%; font-size: 12px; color: var(--muted); }
   .ai { font-size: 13px; color: #d9d4c9; border-left: 2px solid var(--fire); padding-left: 10px; }
   .ai .tk { color: var(--fire); font-weight: 700; }
   .foot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); gap: 8px; }
@@ -128,7 +135,7 @@
     </span>
   </div>
   <h1 class="wordmark">Trench<br><span>Scout</span></h1>
-  <p class="tag">Only what's going viral on X right now — ranked by speed, not size. Spot it before the coin exists.</p>
+  <p class="tag">What's blowing up right now that could become a coin — ranked by speed and meme potential. Spot it before the coin exists.</p>
   <div id="banner"></div>
 </header>
 
@@ -143,7 +150,9 @@
     </span>
     <span class="label" style="margin-left:10px">Sort</span>
     <span class="pills" data-key="sort">
-      <button class="pill on" data-v="score">Heat</button>
+      <button class="pill on" data-v="best">Best</button>
+      <button class="pill" data-v="meme">🪙 Meme</button>
+      <button class="pill" data-v="score">Heat</button>
       <button class="pill" data-v="velocity">Speed</button>
       <button class="pill" data-v="new">Newest</button>
     </span>
@@ -153,7 +162,8 @@
       <button class="pill" data-v="video">Videos</button>
       <button class="pill" data-v="photo">Photos</button>
     </span>
-    <button class="pill" id="freeOnly" style="margin-left:10px">🟢 No coin yet</button>
+    <button class="pill" id="coinable" style="margin-left:10px">🪙 Coin-able only</button>
+    <button class="pill" id="freeOnly">🟢 No coin yet</button>
   </div>
 </div>
 
@@ -163,7 +173,7 @@
 </main>
 
 <script>
-const state = { category: 'all', hours: '24', sort: 'score', media: '', freeOnly: false };
+const state = { category: 'all', hours: '24', sort: 'best', media: '', freeOnly: false, coinable: false };
 let status = null;
 
 const $ = s => document.querySelector(s);
@@ -204,6 +214,18 @@ function coinHtml(c) {
   return `<div class="coin taken">🟡 ${c.count} coin${c.count>1?'s':''} on “${esc(c.term)}” · top <a href="${esc(t.url)}" target="_blank" rel="noopener">$${esc(t.symbol)}</a> ${esc(t.chain)} · ${fmt(t.mcap)} mcap · ${ago(t.createdAt)} old</div>`;
 }
 
+const PLATFORM = { x: 'X', tiktok: 'TikTok', instagram: 'Instagram', reddit: 'Reddit' };
+function memeBox(p) {
+  if (p.meme == null) return '';
+  const cls = p.meme >= 70 ? 'hi' : p.meme >= (status?.memeAlertScore ?? 45) ? 'mid' : 'lo';
+  return `<div class="score meme ${cls}"><small>MEME</small>${p.meme}</div>`;
+}
+function memeLine(p) {
+  if (!p.memeName && !p.ticker) return '';
+  const why = (p.memeReasons || []).filter(r => !r.startsWith('name:')).slice(0, 3).join(' · ');
+  return `<div class="memeline">🪙 ${p.memeName ? `<b>${esc(p.memeName)}</b>` : ''}${p.ticker ? ` <span class="tk">$${esc(p.ticker)}</span>` : ''}${why ? `<span class="why">${esc(why)}</span>` : ''}</div>`;
+}
+
 function card(p) {
   const cats = p.categories.map(id => { const c = status?.categories.find(x => x.id === id); return c ? `${c.emoji} ${esc(c.label)}` : id; }).join(' · ');
   const isVid = p.mediaType === 'video' || p.mediaType === 'animated_gif';
@@ -211,17 +233,18 @@ function card(p) {
     <a class="media" href="${esc(p.url)}" target="_blank" rel="noopener">
       <img loading="lazy" src="${esc(p.mediaUrl)}" alt="" onerror="this.remove()">
       <div class="badge-row">
-        <div class="score"><small>HEAT</small>${p.score}</div>
+        <div class="scores"><div class="score"><small>HEAT</small>${p.score}</div>${memeBox(p)}</div>
         ${p.heatingUp ? '<span class="chip heat">⚡ heating up</span>' : `<span class="chip">${ago(p.createdAt)} old</span>`}
       </div>
       ${isVid ? '<span class="chip vid">▶ video</span>' : ''}
-    </a>` : `<div style="padding:14px 16px 0"><span class="score" style="background:var(--pill)"><small>HEAT</small>${p.score}</span></div>`;
+    </a>` : `<div style="padding:14px 16px 0"><div class="scores"><span class="score" style="background:var(--pill)"><small>HEAT</small>${p.score}</span>${memeBox(p)}</div></div>`;
   return `<article class="card tier-${p.tier}">
     ${media}
     <div class="body">
       <div class="cats">${cats}</div>
       <p class="text">${esc(p.text.slice(0, 280))}</p>
-      ${p.ai?.narrative ? `<div class="ai">${esc(p.ai.narrative)}${p.ai.ticker ? ` <span class="tk">$${esc(p.ai.ticker)}</span>` : ''}</div>` : ''}
+      ${memeLine(p)}
+      ${p.ai?.narrative ? `<div class="ai">${esc(p.ai.narrative)}</div>` : ''}
       <div class="stats">
         <div><b>${fmt(p.views)}</b>views</div>
         <div><b>${fmt(p.likes)}</b>likes</div>
@@ -232,7 +255,7 @@ function card(p) {
       ${coinHtml(p.coin)}
       <div class="foot">
         <span class="who">@${esc(p.authorHandle)} · ${fmt(p.authorFollowers)}</span>
-        <a class="open" href="${esc(p.url)}" target="_blank" rel="noopener">Open on X</a>
+        <a class="open" href="${esc(p.url)}" target="_blank" rel="noopener">Open on ${PLATFORM[p.platform || 'x'] || 'X'}</a>
       </div>
     </div>
   </article>`;
@@ -240,6 +263,7 @@ function card(p) {
 
 async function load() {
   const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, media: state.media });
+  if (state.coinable) qs.set('minMeme', status?.memeAlertScore ?? 45);
   let posts = await fetch('api/posts?' + qs).then(r => r.json()).catch(() => []);
   if (state.freeOnly) posts = posts.filter(p => p.coin && p.coin.count === 0);
   $('#grid').innerHTML = posts.map(card).join('');
@@ -253,6 +277,7 @@ document.querySelectorAll('.pills[data-key]').forEach(group => {
     state[group.dataset.key] = b.dataset.v; load();
   };
 });
+$('#coinable').onclick = e => { state.coinable = !state.coinable; e.currentTarget.classList.toggle('on', state.coinable); load(); };
 $('#freeOnly').onclick = e => { state.freeOnly = !state.freeOnly; e.currentTarget.classList.toggle('on', state.freeOnly); load(); };
 $('#scanBtn').onclick = async e => {
   const b = e.currentTarget; b.disabled = true; b.textContent = 'Scanning…';

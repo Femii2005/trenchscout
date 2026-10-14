@@ -4,6 +4,7 @@ import { searchTop, lookup } from './twitter.js';
 import { scorePost, weighted } from './score.js';
 import { categorize, guessSubject, aiRead } from './classify.js';
 import { coinCheck } from './dex.js';
+import { memePotential, bestScore } from './meme.js';
 import * as store from './db.js';
 import { sendAlert } from './telegram.js';
 
@@ -39,7 +40,7 @@ export async function runScan() {
 
     // 2) Re-check the current top posts we didn't just see, to measure acceleration
     const recheckIds = store
-      .listPosts({ hours: 24, limit: config.recheckLimit })
+      .listPosts({ hours: 24, sort: 'score', limit: config.recheckLimit })
       .map(p => p.id)
       .filter(id => !found.has(id));
     for (let i = 0; i < recheckIds.length; i += 20) {
@@ -62,16 +63,30 @@ export async function runScan() {
       const s = scorePost(post, store.snapshotsFor(post.id), now);
 
       const categories = categorize(post.text, [...cats, ...(existing?.categories || [])]);
+      let m = memePotential(post, categories, existing?.ai);
       let ai = existing?.ai || null;
-      if (!ai && s.score >= config.alertScore - 10) ai = await aiRead(post);
+      // Ask Claude (optional) about posts that are hot or look coin-able
+      if (!ai && (s.score >= config.alertScore - 10 || (s.score >= 45 && m.meme >= config.memeAlertScore))) {
+        ai = await aiRead(post);
+        if (ai) m = memePotential(post, categories, ai);
+      }
 
-      const subject = ai?.subject || existing?.subject || guessSubject(post);
+      // The coin check searches the character's name first ("Moo Deng"), then the subject ("hippo")
+      const subject = m.name || ai?.subject || existing?.subject || guessSubject(post);
       let coin = existing?.coin || null;
-      if (s.score >= 45 && subject) coin = (await coinCheck(subject)) || coin;
+      if (s.score >= 45 && m.meme >= 35 && subject && (!coin || coin.term !== subject || now - (existing?.lastChecked || 0) > 20 * 60_000)) {
+        coin = (await coinCheck(subject)) || coin;
+      }
 
       const full = {
         ...post,
+        platform: post.platform || 'x',
         ...s,
+        meme: m.meme,
+        memeName: m.name,
+        ticker: m.ticker,
+        memeReasons: m.reasons,
+        best: bestScore(s.score, m.meme),
         categories,
         subject,
         coin,
@@ -82,7 +97,8 @@ export async function runScan() {
       };
       store.upsertPost(full);
 
-      if (!full.alerted && s.score >= config.alertScore) {
+      // Alert only when it's BOTH blowing up AND looks like coin material
+      if (!full.alerted && s.score >= config.alertScore && m.meme >= config.memeAlertScore) {
         const ok = await sendAlert(full);
         if (ok) {
           store.markAlerted(post.id);

@@ -53,7 +53,9 @@ Trench Scout running on :8080
 | `SCAN_INTERVAL_MIN` | 30 | Minutes between scans (min 5) |
 | `REQUEST_GAP_MS` | 5500 | Wait between twitterapi.io calls. Free tier needs 5000+; paid can use 500 |
 | `LOOKBACK_HOURS` | 12 | Only posts younger than this |
-| `ALERT_SCORE` | 70 | Heat score (0–100) that triggers a Telegram alert |
+| `ALERT_SCORE` | 70 | Heat score (0–100) needed for a Telegram alert |
+| `MEME_ALERT_SCORE` | 45 | Meme potential (0–100) also needed for an alert |
+| `BIG_ACCOUNTS` | elonmusk,MrBeast,SnoopDogg,cb_doge,DogeDesigner | Accounts watched in the ⭐ Big accounts category |
 | `RECHECK_LIMIT` | 25 | Top posts re-checked each scan to detect "heating up" |
 | `KEEP_HOURS` | 72 | Older posts get deleted |
 | `TELEGRAM_CHAT_IDS` | – | Extra chats/groups that always get alerts (comma-separated) |
@@ -61,6 +63,19 @@ Trench Scout running on :8080
 | `DEMO` | – | `1` = fake sample posts, no API key needed |
 
 ---
+
+## Meme potential (🪙 0–100)
+
+Every post also gets a **meme potential** score for how likely it is to become a coin:
+- **+** a character with a name ("her name is Moo Deng", "meet Pnut"); the name becomes the suggested ticker
+- **+** an animal, especially zoo/baby/rescue animals with personality
+- **+** a catchphrase everyone's repeating (quoted phrases become the ticker)
+- **+** posted by a big account (Elon etc.)
+- **−** already crypto shilling ($TICKER, CA:, presale…), grim news, long news threads
+
+With `ANTHROPIC_API_KEY` set, Claude also rates coinability and that rating counts for 60%.
+
+**Alerts fire only when heat ≥ `ALERT_SCORE` AND meme ≥ `MEME_ALERT_SCORE`.** The dashboard's default **Best** sort blends both.
 
 ## How the heat score works
 

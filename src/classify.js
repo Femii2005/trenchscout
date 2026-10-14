@@ -40,10 +40,21 @@ export async function aiRead(post) {
       },
       body: JSON.stringify({
         model: config.anthropicModel,
-        max_tokens: 200,
+        max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `A post is going viral on X. Reply with ONLY JSON: {"narrative": "<one short line on what it is and why people care>", "subject": "<the main character/thing, 1-2 words>", "ticker": "<a catchy meme coin ticker, 3-8 letters, no $>"}\n\nPost by @${post.authorHandle} (${post.mediaType || 'text'}):\n${post.text.slice(0, 800)}`,
+          content: `A post is going viral on ${post.platform || 'X'}. You scout early meme coin narratives. Coins usually come from a named character (often an animal), a phrase everyone repeats, or something a huge account posted; they rarely come from grim news, ads, or posts already shilling a coin.
+
+Reply with ONLY JSON:
+{"narrative": "<one short line: what it is and why people care>",
+ "subject": "<main character/thing, 1-2 words>",
+ "name": "<the character's proper name or the catchphrase if there is one, else null>",
+ "ticker": "<catchy meme coin ticker, 3-8 letters, no $>",
+ "coinability": <0-10, how likely this becomes a meme coin narrative>,
+ "why": "<max 8 words>"}
+
+Post by @${post.authorHandle} (${post.mediaType || 'text'}):
+${post.text.slice(0, 800)}`,
         }],
       }),
     });
@@ -51,7 +62,15 @@ export async function aiRead(post) {
     const data = await res.json();
     const txt = data.content?.[0]?.text || '';
     const json = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
-    return { narrative: json.narrative, subject: json.subject, ticker: (json.ticker || '').toUpperCase().replace(/[^A-Z0-9]/g, '') };
+    const c = Number(json.coinability);
+    return {
+      narrative: json.narrative,
+      subject: json.subject,
+      name: json.name && json.name !== 'null' ? String(json.name) : null,
+      ticker: (json.ticker || '').toUpperCase().replace(/[^A-Z0-9]/g, ''),
+      coinability: Number.isFinite(c) ? Math.max(0, Math.min(10, c)) : undefined,
+      why: json.why || null,
+    };
   } catch {
     return null;
   }

@@ -2,22 +2,23 @@
 import * as store from './db.js';
 import { scorePost, weighted } from './score.js';
 import { categorize } from './classify.js';
+import { memePotential, bestScore } from './meme.js';
 
 const SAMPLES = [
-  ['cute_animal', 'This baby hippo just discovered water for the first time and I can\'t stop watching 😭', 'video', 0.9, 48000, 2.1e6, 'hippo', 0],
-  ['animal_rescue', 'Found this puppy abandoned in a box by the highway. Look at him now after 2 weeks 🥹', 'video', 2.5, 61000, 3.4e6, 'puppy', 3],
-  ['nature', 'Waterspout forming off the coast of Florida right now. Never seen anything like this', 'video', 1.2, 22000, 1.6e6, 'waterspout', 0],
+  ['zoo_baby', 'Meet Moo Deng, the baby hippo at the zoo who just discovered water and bites everyone 😭', 'video', 0.9, 48000, 2.1e6, 'hippo', 0],
+  ['animal_rescue', 'Found this puppy abandoned in a box by the highway. We named him Biscuit 🥹', 'video', 2.5, 61000, 3.4e6, 'puppy', 3],
+  ['weird', 'Waterspout forming off the coast of Florida right now. Never seen anything like this', 'video', 1.2, 22000, 1.6e6, 'waterspout', 0],
   ['funny', 'bro really tried to fight his own reflection for 4 minutes straight 💀💀', 'video', 3.5, 90000, 6.2e6, 'reflection', 12],
-  ['cute_animal', 'A capybara wearing a tiny hat at the zoo. That\'s it. That\'s the post.', 'photo', 5, 35000, 1.1e6, 'capybara', 5],
-  ['unique', 'World\'s smallest horse was born this morning. She weighs 4kg', 'photo', 1.8, 27000, 900000, 'horse', 1],
-  ['meme', 'nah this guy is the final boss of customer service', 'video', 7, 120000, 9.5e6, 'boss', 9],
-  ['wholesome', 'Grandpa learned how to skateboard at 81 to impress his grandkid. Made my day', 'video', 4, 40000, 2.2e6, 'grandpa', 0],
-  ['cute_animal', 'This raccoon has been stealing cat food from my porch every night and now he waves at the camera', 'video', 0.6, 9000, 380000, 'raccoon', 0],
-  ['nature', 'Purple aurora over Lagos?? is this real', 'photo', 2.2, 15000, 700000, 'aurora', 2],
-  ['animal_rescue', 'Firefighters rescued a kitten stuck inside a wall for 3 days. Her name is now Ember', 'video', 9, 52000, 2.9e6, 'ember', 4],
+  ['zoo_baby', 'A capybara wearing a tiny hat at the zoo. That\'s it. That\'s the post.', 'photo', 5, 35000, 1.1e6, 'capybara', 5],
+  ['weird', 'World\'s smallest horse was born this morning. She weighs 4kg', 'photo', 1.8, 27000, 900000, 'horse', 1],
+  ['funny', 'nah this guy is the final boss of customer service', 'video', 7, 120000, 9.5e6, 'boss', 9],
+  ['animal_character', 'Grandpa learned how to skateboard at 81 to impress his grandkid. Made my day', 'video', 4, 40000, 2.2e6, 'grandpa', 0],
+  ['zoo_baby', 'This raccoon has been stealing cat food from my porch every night and now he waves at the camera', 'video', 0.6, 9000, 380000, 'raccoon', 0],
+  ['weird', 'Purple aurora over Lagos?? is this real', 'photo', 2.2, 15000, 700000, 'aurora', 2],
+  ['animal_rescue', 'Firefighters rescued a kitten stuck inside a wall for 3 days. Her name is Ember', 'video', 9, 52000, 2.9e6, 'ember', 4],
   ['funny', 'The way this goat screams every time the farmer leaves lmao', 'video', 11, 33000, 1.4e6, 'goat', 7],
   ['viral', 'Penguin breaks out of the aquarium and walks into a sushi restaurant next door', 'video', 1.5, 70000, 4.1e6, 'penguin', 0],
-  ['unique', 'Rare footage of a two-headed snake found in Texas backyard', 'video', 14, 18000, 1.2e6, 'snake', 6],
+  ['weird', 'Rare footage of a two-headed snake found in Texas backyard', 'video', 14, 18000, 1.2e6, 'snake', 6],
 ];
 
 export function seedDemo() {
@@ -48,11 +49,15 @@ export function seedDemo() {
     store.addSnapshot(post.id, now - 30 * 60_000, w * (i % 3 === 0 ? 0.6 : 0.93), views * 0.8);
     store.addSnapshot(post.id, now, w, views);
     const s = scorePost(post, store.snapshotsFor(post.id), now);
+    const categories = categorize(text, [cat]);
+    const m = memePotential(post, categories);
     store.upsertPost({
       ...post,
+      platform: 'x',
       ...s,
-      categories: categorize(text, [cat]),
-      subject,
+      meme: m.meme, memeName: m.name, ticker: m.ticker, memeReasons: m.reasons, best: bestScore(s.score, m.meme),
+      categories,
+      subject: m.name || subject,
       coin: coins
         ? { term: subject, count: coins, top: { symbol: subject.toUpperCase().slice(0, 6), name: subject, chain: 'solana', mcap: 40000 * coins * coins, createdAt: now - coins * 1_800_000, url: 'https://dexscreener.com' } }
         : { term: subject, count: 0, top: null },

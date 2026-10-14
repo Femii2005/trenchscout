@@ -73,14 +73,19 @@ export function markAlerted(id) {
   if (data.posts[id]) { data.posts[id].alerted = true; save(); }
 }
 
-export function listPosts({ category, hours = 24, minScore = 0, media, sort = 'score', limit = 120 } = {}) {
+export function listPosts({ category, hours = 24, minScore = 0, minMeme = 0, media, platform, sort = 'best', limit = 120 } = {}) {
   const since = Date.now() - hours * 3_600_000;
   let list = Object.values(data.posts).filter(p => p.createdAt >= since && (p.score ?? 0) >= minScore);
+  if (minMeme) list = list.filter(p => (p.meme ?? 0) >= minMeme);
+  if (platform && platform !== 'all') list = list.filter(p => (p.platform || 'x') === platform);
   if (category && category !== 'all') list = list.filter(p => (p.categories || []).includes(category));
   if (media === 'video') list = list.filter(p => p.mediaType === 'video' || p.mediaType === 'animated_gif');
   if (media === 'photo') list = list.filter(p => p.mediaType === 'photo');
-  const key = sort === 'new' ? 'createdAt' : sort === 'velocity' ? 'velocity' : 'score';
-  list.sort((a, b) => (b[key] ?? 0) - (a[key] ?? 0));
+  const keys = { new: 'createdAt', velocity: 'velocity', score: 'score', meme: 'meme', best: 'best' };
+  const key = keys[sort] || 'best';
+  // older posts (from before meme scoring) fall back to heat score
+  const val = p => (key === 'best' ? (p.best ?? p.score) : p[key]) ?? 0;
+  list.sort((a, b) => val(b) - val(a));
   return list.slice(0, limit);
 }
 
