@@ -7,6 +7,8 @@ export const config = {
 
   // Data source: https://twitterapi.io (pay-as-you-go, ~$0.15 per 1,000 tweets)
   twitterApiKey: process.env.TWITTERAPI_KEY || '',
+  // Gap between requests. Free tier = 1 request / 5s. If you upgrade, set REQUEST_GAP_MS=500.
+  requestGapMs: num(process.env.REQUEST_GAP_MS, 5500),
 
   // How often to scan X, in minutes. Lower = fresher but costs more.
   scanIntervalMin: num(process.env.SCAN_INTERVAL_MIN, 30),

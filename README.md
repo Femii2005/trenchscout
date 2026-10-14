@@ -51,6 +51,7 @@ Trench Scout running on :8080
 | Variable | Default | What it does |
 |---|---|---|
 | `SCAN_INTERVAL_MIN` | 30 | Minutes between scans (min 5) |
+| `REQUEST_GAP_MS` | 5500 | Wait between twitterapi.io calls. Free tier needs 5000+; paid can use 500 |
 | `LOOKBACK_HOURS` | 12 | Only posts younger than this |
 | `ALERT_SCORE` | 70 | Heat score (0–100) that triggers a Telegram alert |
 | `RECHECK_LIMIT` | 25 | Top posts re-checked each scan to detect "heating up" |

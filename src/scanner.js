@@ -35,7 +35,6 @@ export async function runScan() {
       } catch (e) {
         stats.errors.push(`${cat.id}: ${e.message}`);
       }
-      await sleep(1200);
     }
 
     // 2) Re-check the current top posts we didn't just see, to measure acceleration

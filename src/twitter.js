@@ -2,9 +2,29 @@ import { config } from './config.js';
 
 const BASE = 'https://api.twitterapi.io';
 
-async function call(path, params) {
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// twitterapi.io free tier allows 1 request every 5 seconds. Every request waits its turn here,
+// so searches and re-checks never collide. Paid accounts can lower REQUEST_GAP_MS.
+let queue = Promise.resolve();
+let lastAt = 0;
+function throttled(fn) {
+  const run = queue.then(async () => {
+    const wait = lastAt + config.requestGapMs - Date.now();
+    if (wait > 0) await sleep(wait);
+    try { return await fn(); } finally { lastAt = Date.now(); }
+  });
+  queue = run.catch(() => {});
+  return run;
+}
+
+async function call(path, params, attempt = 1) {
   const url = `${BASE}${path}?${new URLSearchParams(params)}`;
-  const res = await fetch(url, { headers: { 'X-API-Key': config.twitterApiKey } });
+  const res = await throttled(() => fetch(url, { headers: { 'X-API-Key': config.twitterApiKey } }));
+  if (res.status === 429 && attempt <= 2) {
+    await sleep(config.requestGapMs * attempt);
+    return call(path, params, attempt + 1);
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`twitterapi.io ${res.status}: ${body.slice(0, 200)}`);
