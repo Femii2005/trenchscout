@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trench Scout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07070a;
+    --ink: #f4f1ea;
+    --muted: #8c877d;
+    --line: rgba(244, 241, 234, 0.09);
+    --card: rgba(255, 255, 255, 0.035);
+    --pill: rgba(255, 255, 255, 0.06);
+    --fire: #ff5a1f;
+    --gold: #ffc23d;
+    --green: #3ddc84;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Space Grotesk', system-ui, sans-serif; }
+  body { min-height: 100vh; overflow-x: hidden; }
+
+  /* cinematic backdrop + vignette */
+  .bg {
+    position: fixed; inset: 0; z-index: -1;
+    background:
+      radial-gradient(1200px 700px at 70% -10%, rgba(255, 90, 31, 0.22), transparent 60%),
+      radial-gradient(900px 600px at -10% 30%, rgba(255, 194, 61, 0.08), transparent 60%),
+      radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.85) 100%),
+      var(--bg);
+  }
+  .grain { position: fixed; inset: 0; z-index: -1; opacity: .07; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  header { padding: 28px clamp(16px, 4vw, 48px) 0; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse 1.6s infinite; }
+  .dot.off { background: var(--muted); box-shadow: none; animation: none; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .wordmark {
+    font-family: 'Anton', sans-serif; text-transform: uppercase; line-height: .82;
+    font-size: clamp(84px, 19vw, 300px); letter-spacing: -0.01em;
+    margin: 18px 0 6px; user-select: none;
+    background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,.25));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .wordmark span { color: var(--fire); -webkit-text-fill-color: var(--fire); }
+  .tag { color: var(--muted); font-size: clamp(14px, 1.6vw, 18px); max-width: 560px; }
+
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    border: 0; background: var(--pill); color: var(--ink); font: inherit; font-size: 14px;
+    padding: 9px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
+  }
+  .pill:hover { background: rgba(255,255,255,.12); }
+  .pill.on { background: var(--ink); color: #000; }
+  .pill.fire { background: var(--fire); color: #000; font-weight: 700; }
+  .pill.fire:disabled { opacity: .5; cursor: wait; }
+
+  .controls { position: sticky; top: 0; z-index: 5; padding: 14px clamp(16px, 4vw, 48px);
+    background: rgba(7,7,10,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line); display: grid; gap: 10px; margin: 22px 0 18px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; margin-right: 4px; }
+  .scroll { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+
+  main { padding: 6px clamp(16px, 4vw, 48px) 80px; }
+  .grid { columns: 4 300px; column-gap: 16px; }
+  .card { break-inside: avoid; margin-bottom: 16px; background: var(--card); border-radius: 22px; overflow: hidden;
+    border: 1px solid var(--line); transition: transform .2s, border-color .2s; }
+  .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.18); }
+  .media { position: relative; display: block; background: #111; color: var(--ink); text-decoration: none; }
+  .media img, .media video { width: 100%; display: block; max-height: 520px; object-fit: cover; }
+  .media:not(:has(img)) { min-height: 76px; background: linear-gradient(135deg, rgba(255,90,31,.18), rgba(255,255,255,.02)); }
+  .media:not(:has(img)) .chip.vid { display: none; }
+  .badge-row { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+  .score { font-family: 'Anton'; font-size: 30px; line-height: 1; padding: 8px 12px 6px; border-radius: 14px; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); }
+  .score small { font-family: 'Space Grotesk'; font-size: 10px; display: block; letter-spacing: .14em; color: var(--muted); margin-bottom: 2px; }
+  .tier-mega .score { color: var(--fire); }
+  .tier-hot .score { color: var(--gold); }
+  .chip { font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); white-space: nowrap; }
+  .chip.heat { background: var(--fire); color: #000; font-weight: 700; }
+  .chip.vid { position: absolute; bottom: 12px; left: 12px; }
+
+  .body { padding: 14px 16px 16px; display: grid; gap: 10px; }
+  .cats { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .text { font-size: 15px; line-height: 1.45; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 12px; color: var(--muted); }
+  .stats b { display: block; color: var(--ink); font-size: 15px; }
+  .vel { font-size: 13px; color: var(--muted); }
+  .vel b { color: var(--fire); }
+  .coin { font-size: 13px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.04); }
+  .coin.free { color: var(--green); background: rgba(61,220,132,.08); }
+  .coin.taken { color: var(--gold); background: rgba(255,194,61,.08); }
+  .coin a { color: inherit; }
+  .ai { font-size: 13px; color: #d9d4c9; border-left: 2px solid var(--fire); padding-left: 10px; }
+  .ai .tk { color: var(--fire); font-weight: 700; }
+  .foot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); gap: 8px; }
+  .foot a.open { color: #000; background: var(--ink); text-decoration: none; padding: 7px 14px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+  .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .empty { text-align: center; padding: 80px 16px; color: var(--muted); }
+  .empty h2 { font-family: 'Anton'; font-size: 48px; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; }
+  .banner { margin: 18px 0 0; padding: 12px 16px; border-radius: 16px; background: rgba(255,194,61,.1); color: var(--gold); font-size: 14px; max-width: 760px; }
+
+  @media (max-width: 600px) {
+    .grid { columns: 1; }
+    .controls { position: static; background: none; backdrop-filter: none; border: 0; }
+    .row:not(.scroll) { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .row:not(.scroll)::-webkit-scrollbar { display: none; }
+    .row .pills { flex-wrap: nowrap; }
+  }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grain"></div>
+
+<header>
+  <div class="top">
+    <span class="live"><span class="dot" id="dot"></span><span id="statusText">connecting…</span></span>
+    <span class="pills">
+      <button class="pill fire" id="scanBtn">Scan now</button>
+    </span>
+  </div>
+  <h1 class="wordmark">Trench<br><span>Scout</span></h1>
+  <p class="tag">Only what's going viral on X right now — ranked by speed, not size. Spot it before the coin exists.</p>
+  <div id="banner"></div>
+</header>
+
+<div class="controls">
+  <div class="row scroll" id="catRow"></div>
+  <div class="row">
+    <span class="label">Window</span>
+    <span class="pills" data-key="hours">
+      <button class="pill" data-v="1">1h</button>
+      <button class="pill" data-v="6">6h</button>
+      <button class="pill on" data-v="24">24h</button>
+    </span>
+    <span class="label" style="margin-left:10px">Sort</span>
+    <span class="pills" data-key="sort">
+      <button class="pill on" data-v="score">Heat</button>
+      <button class="pill" data-v="velocity">Speed</button>
+      <button class="pill" data-v="new">Newest</button>
+    </span>
+    <span class="label" style="margin-left:10px">Show</span>
+    <span class="pills" data-key="media">
+      <button class="pill on" data-v="">All</button>
+      <button class="pill" data-v="video">Videos</button>
+      <button class="pill" data-v="photo">Photos</button>
+    </span>
+    <button class="pill" id="freeOnly" style="margin-left:10px">🟢 No coin yet</button>
+  </div>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden><h2>Quiet</h2><p>Nothing matching right now. Widen the window or wait for the next scan.</p></div>
+</main>
+
+<script>
+const state = { category: 'all', hours: '24', sort: 'score', media: '', freeOnly: false };
+let status = null;
+
+const $ = s => document.querySelector(s);
+const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : String(Math.round(n||0));
+const ago = ms => { const m = Math.max(0, Math.round((Date.now()-ms)/60000)); return m < 60 ? m+'m' : m < 1440 ? (m/60).toFixed(1)+'h' : Math.round(m/1440)+'d'; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadStatus() {
+  try {
+    status = await fetch('api/status').then(r => r.json());
+    const row = $('#catRow');
+    if (!row.children.length) {
+      row.innerHTML = `<button class="pill on" data-cat="all">All</button>` +
+        status.categories.map(c => `<button class="pill" data-cat="${c.id}">${c.emoji} ${esc(c.label)}</button>`).join('');
+      row.onclick = e => {
+        const b = e.target.closest('[data-cat]'); if (!b) return;
+        row.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p === b));
+        state.category = b.dataset.cat; load();
+      };
+    }
+    const live = status.hasKey || status.demo;
+    $('#dot').classList.toggle('off', !live);
+    let t = status.demo ? 'DEMO DATA' : status.hasKey ? 'Live' : 'Not connected';
+    if (status.lastScan) t += ` · scanned ${ago(status.lastScan)} ago`;
+    if (status.nextScan && status.hasKey) t += ` · next in ${Math.max(0, Math.round((status.nextScan - Date.now())/60000))}m`;
+    if (status.telegram) t += ' · 📲 alerts on';
+    $('#statusText').textContent = t;
+    $('#banner').innerHTML = !status.hasKey && !status.demo
+      ? `<div class="banner">No TWITTERAPI_KEY set yet — add it in your Railway variables and the scanner starts automatically.</div>`
+      : status.stats?.errors?.length ? `<div class="banner">Last scan had ${status.stats.errors.length} error(s): ${esc(status.stats.errors[0])}</div>` : '';
+  } catch {}
+}
+
+function coinHtml(c) {
+  if (!c) return '';
+  if (!c.count) return `<div class="coin free">🟢 No coin launched on “${esc(c.term)}” yet</div>`;
+  const t = c.top;
+  return `<div class="coin taken">🟡 ${c.count} coin${c.count>1?'s':''} on “${esc(c.term)}” · top <a href="${esc(t.url)}" target="_blank" rel="noopener">$${esc(t.symbol)}</a> ${esc(t.chain)} · ${fmt(t.mcap)} mcap · ${ago(t.createdAt)} old</div>`;
+}
+
+function card(p) {
+  const cats = p.categories.map(id => { const c = status?.categories.find(x => x.id === id); return c ? `${c.emoji} ${esc(c.label)}` : id; }).join(' · ');
+  const isVid = p.mediaType === 'video' || p.mediaType === 'animated_gif';
+  const media = p.mediaUrl ? `
+    <a class="media" href="${esc(p.url)}" target="_blank" rel="noopener">
+      <img loading="lazy" src="${esc(p.mediaUrl)}" alt="" onerror="this.remove()">
+      <div class="badge-row">
+        <div class="score"><small>HEAT</small>${p.score}</div>
+        ${p.heatingUp ? '<span class="chip heat">⚡ heating up</span>' : `<span class="chip">${ago(p.createdAt)} old</span>`}
+      </div>
+      ${isVid ? '<span class="chip vid">▶ video</span>' : ''}
+    </a>` : `<div style="padding:14px 16px 0"><span class="score" style="background:var(--pill)"><small>HEAT</small>${p.score}</span></div>`;
+  return `<article class="card tier-${p.tier}">
+    ${media}
+    <div class="body">
+      <div class="cats">${cats}</div>
+      <p class="text">${esc(p.text.slice(0, 280))}</p>
+      ${p.ai?.narrative ? `<div class="ai">${esc(p.ai.narrative)}${p.ai.ticker ? ` <span class="tk">$${esc(p.ai.ticker)}</span>` : ''}</div>` : ''}
+      <div class="stats">
+        <div><b>${fmt(p.views)}</b>views</div>
+        <div><b>${fmt(p.likes)}</b>likes</div>
+        <div><b>${fmt(p.retweets)}</b>reposts</div>
+        <div><b>${fmt(p.replies)}</b>replies</div>
+      </div>
+      <div class="vel"><b>${fmt(p.velocity)}</b> engagements/hr · ${fmt(p.viewsPerHour)} views/hr · ${ago(p.createdAt)} old</div>
+      ${coinHtml(p.coin)}
+      <div class="foot">
+        <span class="who">@${esc(p.authorHandle)} · ${fmt(p.authorFollowers)}</span>
+        <a class="open" href="${esc(p.url)}" target="_blank" rel="noopener">Open on X</a>
+      </div>
+    </div>
+  </article>`;
+}
+
+async function load() {
+  const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, media: state.media });
+  let posts = await fetch('api/posts?' + qs).then(r => r.json()).catch(() => []);
+  if (state.freeOnly) posts = posts.filter(p => p.coin && p.coin.count === 0);
+  $('#grid').innerHTML = posts.map(card).join('');
+  $('#empty').hidden = posts.length > 0;
+}
+
+document.querySelectorAll('.pills[data-key]').forEach(group => {
+  group.onclick = e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    group.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p === b));
+    state[group.dataset.key] = b.dataset.v; load();
+  };
+});
+$('#freeOnly').onclick = e => { state.freeOnly = !state.freeOnly; e.currentTarget.classList.toggle('on', state.freeOnly); load(); };
+$('#scanBtn').onclick = async e => {
+  const b = e.currentTarget; b.disabled = true; b.textContent = 'Scanning…';
+  try { await fetch('api/scan', { method: 'POST' }); } catch {}
+  b.disabled = false; b.textContent = 'Scan now';
+  await loadStatus(); await load();
+};
+
+(async () => { await loadStatus(); await load(); })();
+setInterval(async () => { await loadStatus(); await load(); }, 60_000);
+</script>
+</body>
+</html>
