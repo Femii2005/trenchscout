@@ -68,7 +68,8 @@ export function memePotential(post, categories = [], ai = null) {
   const isBig = BIG.has((post.authorHandle || '').toLowerCase());
   const isPhrase = categories.includes('catchphrase');
   // A name only counts fully when it's a mascot (animal / catchphrase / big account), not a person in a news story
-  if (name) { s += (animal || isPhrase || isBig || ai?.name) ? 30 : 8; reasons.push(`name: ${name}`); }
+  const isNews = NEWS_RE.test(text) || GRIM_RE.test(text);
+  if (name) { s += (animal || isPhrase || isBig || ai?.name) && !isNews ? 30 : 8; reasons.push(`name: ${name}`); }
   if (animal) { s += 15; reasons.push(animal); }
   if (categories.some(c => ANIMAL_CATS.has(c))) s += 10;
 
@@ -77,7 +78,7 @@ export function memePotential(post, categories = [], ai = null) {
   if (post.mediaType === 'video' || post.mediaType === 'animated_gif') s += 5;
 
   if (SHILL_RE.test(text)) { s -= 35; reasons.push('already crypto talk'); }
-  if (GRIM_RE.test(text) || NEWS_RE.test(text)) { s -= 20; reasons.push('news'); }
+  if (isNews) { s -= 20; reasons.push('news'); }
   if (POLITICS_RE.test(text)) { s -= 30; reasons.push('politics'); }
   if (SPORTS_RE.test(text)) { s -= 15; reasons.push('sports'); }
   if (text.length > 240) s -= 10;
@@ -93,5 +94,6 @@ export function memePotential(post, categories = [], ai = null) {
   return { meme, name: name || null, ticker, reasons };
 }
 
-// One number for "show me the best stuff first": how hot × how coin-able.
-export const bestScore = (heat, meme) => Math.round(0.55 * heat + 0.45 * meme);
+// One number for "show me the best stuff first". Geometric mean: a post needs to be BOTH hot and coin-able
+// to rank high — very hot but not coin-able (football, news) sinks; coin-able but dead also sinks.
+export const bestScore = (heat, meme) => Math.round(Math.sqrt(Math.max(0, heat) * Math.max(0, meme)));
