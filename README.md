@@ -46,11 +46,23 @@ Trench Scout running on :8080
 [scan] {"fetched":...,"newPosts":...,"alerts":...,"errors":[]}
 ```
 
+## TikTok (optional)
+
+TikTok scanning uses [ScrapeCreators](https://scrapecreators.com) (1 credit per search, $47 = 25,000 credits, credits never expire, 100 free to start).
+
+1. Sign up, copy your API key.
+2. Railway → Variables → add `SCRAPECREATORS_KEY=your_key`.
+
+It runs 8 coin-tuned searches every 2 hours (≈2,900 credits/month ≈ $5.50). Edit the searches in `TIKTOK_SEARCHES` in `src/queries.js`.
+The dashboard header shows credits left. When the same name (e.g. "Moo Deng") is blowing up on TikTok **and** X, it gets a 🌐 cross-platform boost: the strongest breakout signal.
+
 ## All settings
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SCAN_INTERVAL_MIN` | 30 | Minutes between scans (min 5) |
+| `SCAN_INTERVAL_MIN` | 30 | Minutes between X scans (min 5) |
+| `TIKTOK_INTERVAL_MIN` | 120 | Minutes between TikTok scans (min 30) |
+| `TIKTOK_REGION` | US | TikTok region for searches |
 | `REQUEST_GAP_MS` | 5500 | Wait between twitterapi.io calls. Free tier needs 5000+; paid can use 500 |
 | `LOOKBACK_HOURS` | 12 | Only posts younger than this |
 | `ALERT_SCORE` | 70 | Heat score (0–100) needed for a Telegram alert |

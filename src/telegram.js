@@ -123,7 +123,7 @@ async function handle(msg, dashboardUrl) {
     return tg('sendMessage', {
       chat_id,
       parse_mode: 'HTML',
-      text: `👀 <b>Trench Scout</b> is watching X.\nYou'll get pinged when a post hits heat ${config.alertScore}+ AND meme potential ${config.memeAlertScore}+.\n\n/top — top 5 right now\n/stop — pause alerts${dashboardUrl ? `\n\nDashboard: ${dashboardUrl}` : ''}`,
+      text: `👀 <b>Trench Scout</b> is watching ${config.scrapeCreatorsKey ? 'X + TikTok' : 'X'}.\nYou'll get pinged when a post hits heat ${config.alertScore}+ AND meme potential ${config.memeAlertScore}+.\n\n/top — top 5 right now\n/stop — pause alerts${dashboardUrl ? `\n\nDashboard: ${dashboardUrl}` : ''}`,
     });
   }
   if (cmd === '/stop') {

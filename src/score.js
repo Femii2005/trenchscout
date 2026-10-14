@@ -1,8 +1,14 @@
 // Virality scoring. Raw totals don't matter for launches — SPEED does.
 
+// TikTok numbers run far bigger than X for the same level of "viral" (autoplay views, easy likes).
+// These scale them down so a heat of 80 means roughly the same thing on every platform. Tune if needed.
+const SCALE = { x: 1, tiktok: 0.15, instagram: 0.3 };
+const VIEW_SCALE = { x: 1, tiktok: 0.1, instagram: 0.3 };
+const scaleOf = p => SCALE[p.platform || 'x'] ?? 1;
+
 export function weighted(p) {
   // Reposts and quotes spread content further than likes, so they count more.
-  return p.likes + 2 * p.retweets + 3 * p.quotes + p.replies + 0.5 * p.bookmarks;
+  return scaleOf(p) * (p.likes + 2 * p.retweets + 3 * p.quotes + p.replies + 0.5 * p.bookmarks);
 }
 
 export function ageHours(p, now = Date.now()) {
@@ -18,6 +24,7 @@ export function scorePost(p, snapshots = [], now = Date.now()) {
   const w = weighted(p);
   const velocity = w / h; // engagement per hour since posting
   const viewsPerHour = p.views / h;
+  const scaledViews = viewsPerHour * (VIEW_SCALE[p.platform || 'x'] ?? 1);
 
   // Acceleration: engagement rate in the latest window vs lifetime average.
   let accel = null;
@@ -34,7 +41,7 @@ export function scorePost(p, snapshots = [], now = Date.now()) {
   // Score 0–100 (log scale so a mega-viral post doesn't flatten everything else)
   let score =
     20 * Math.log10(1 + velocity / 50) +      // 10k eng/h → ~46, 80k/h → ~64
-    7 * Math.log10(1 + viewsPerHour / 5000);  // views boost (300k/h → ~12)
+    7 * Math.log10(1 + scaledViews / 5000);  // views boost (300k/h → ~12)
   if (h < 2) score += 10;        // brand new and already moving
   else if (h < 6) score += 5;
   if (accel !== null) {

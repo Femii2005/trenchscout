@@ -54,7 +54,11 @@ export function extractName(text) {
 export const toTicker = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || null;
 
 /** returns { meme: 0-100, name, ticker, reasons: [] } */
-export function memePotential(post, categories = [], ai = null) {
+const PLATFORM_NAME = { x: 'X', tiktok: 'TikTok', instagram: 'Instagram', reddit: 'Reddit' };
+
+// cross = list of OTHER platforms where the same name is also blowing up (strongest breakout signal)
+// knownName = this name is already showing up in other posts (so it's a real mascot, even if this caption has no animal word)
+export function memePotential(post, categories = [], ai = null, cross = [], knownName = false) {
   const text = post.text || '';
   const reasons = [];
   let s = 20;
@@ -69,12 +73,13 @@ export function memePotential(post, categories = [], ai = null) {
   const isPhrase = categories.includes('catchphrase');
   // A name only counts fully when it's a mascot (animal / catchphrase / big account), not a person in a news story
   const isNews = NEWS_RE.test(text) || GRIM_RE.test(text);
-  if (name) { s += (animal || isPhrase || isBig || ai?.name) && !isNews ? 30 : 8; reasons.push(`name: ${name}`); }
+  if (name) { s += (animal || isPhrase || isBig || ai?.name || knownName) && !isNews ? 30 : 8; reasons.push(`name: ${name}`); }
   if (animal) { s += 15; reasons.push(animal); }
   if (categories.some(c => ANIMAL_CATS.has(c))) s += 10;
 
   if (isBig) { s += 25; reasons.push(`posted by @${post.authorHandle}`); }
   if (isPhrase) { s += 15; reasons.push('catchphrase'); }
+  if (cross?.length) { s += 15; reasons.push(`🌐 also on ${cross.map(c => PLATFORM_NAME[c] || c).join(' + ')}`); }
   if (post.mediaType === 'video' || post.mediaType === 'animated_gif') s += 5;
 
   if (SHILL_RE.test(text)) { s -= 35; reasons.push('already crypto talk'); }

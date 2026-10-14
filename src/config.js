@@ -7,6 +7,12 @@ export const config = {
 
   // Data source: https://twitterapi.io (pay-as-you-go, ~$0.15 per 1,000 tweets)
   twitterApiKey: process.env.TWITTERAPI_KEY || '',
+  // TikTok via ScrapeCreators. Scanner stays off until the key is set.
+  scrapeCreatorsKey: process.env.SCRAPECREATORS_KEY || '',
+  // Minutes between TikTok scans. 120 = ~8 searches x 12/day ≈ 2,900 credits/month (~$5.50).
+  tiktokIntervalMin: num(process.env.TIKTOK_INTERVAL_MIN, 120),
+  tiktokRegion: process.env.TIKTOK_REGION || 'US',
+
   // Gap between requests. Free tier = 1 request / 5s. If you upgrade, set REQUEST_GAP_MS=500.
   requestGapMs: num(process.env.REQUEST_GAP_MS, 5500),
 

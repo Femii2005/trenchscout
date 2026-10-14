@@ -99,6 +99,9 @@
   .coin.taken { color: var(--gold); background: rgba(255,194,61,.08); }
   .coin a { color: inherit; }
   .scores { display: flex; gap: 6px; }
+  .plat { font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; background: var(--pill); color: var(--ink); margin-right: 2px; }
+  .plat-tiktok { background: #fe2c55; color: #fff; }
+  .plat.cross { background: rgba(61,220,132,.15); color: var(--green); }
   .score.meme { color: var(--muted); }
   .score.meme.mid { color: var(--gold); }
   .score.meme.hi { color: var(--green); }
@@ -156,6 +159,12 @@
       <button class="pill" data-v="velocity">Speed</button>
       <button class="pill" data-v="new">Newest</button>
     </span>
+    <span class="label" style="margin-left:10px">Where</span>
+    <span class="pills" data-key="platform">
+      <button class="pill on" data-v="all">All</button>
+      <button class="pill" data-v="x">𝕏</button>
+      <button class="pill" data-v="tiktok">TikTok</button>
+    </span>
     <span class="label" style="margin-left:10px">Show</span>
     <span class="pills" data-key="media">
       <button class="pill on" data-v="">All</button>
@@ -173,7 +182,7 @@
 </main>
 
 <script>
-const state = { category: 'all', hours: '24', sort: 'best', media: '', freeOnly: false, coinable: false };
+const state = { category: 'all', hours: '24', sort: 'best', media: '', platform: 'all', freeOnly: false, coinable: false };
 let status = null;
 
 const $ = s => document.querySelector(s);
@@ -199,11 +208,13 @@ async function loadStatus() {
     let t = status.demo ? 'DEMO DATA' : status.hasKey ? 'Live' : 'Not connected';
     if (status.lastScan) t += ` · scanned ${ago(status.lastScan)} ago`;
     if (status.nextScan && status.hasKey) t += ` · next in ${Math.max(0, Math.round((status.nextScan - Date.now())/60000))}m`;
+    if (status.tiktok) t += ` · TikTok ${status.tiktok.lastScan ? `scanned ${ago(status.tiktok.lastScan)} ago` : 'starting'}${status.tiktok.credits != null ? ` (${status.tiktok.credits.toLocaleString()} credits left)` : ''}`;
     if (status.telegram) t += ' · 📲 alerts on';
     $('#statusText').textContent = t;
     $('#banner').innerHTML = !status.hasKey && !status.demo
       ? `<div class="banner">No TWITTERAPI_KEY set yet — add it in your Railway variables and the scanner starts automatically.</div>`
-      : status.stats?.errors?.length ? `<div class="banner">Last scan had ${status.stats.errors.length} error(s): ${esc(status.stats.errors[0])}</div>` : '';
+      : status.stats?.errors?.length ? `<div class="banner">Last X scan had ${status.stats.errors.length} error(s): ${esc(status.stats.errors[0])}</div>`
+      : status.tiktok?.stats?.errors?.length ? `<div class="banner">Last TikTok scan had ${status.tiktok.stats.errors.length} error(s): ${esc(status.tiktok.stats.errors[0])}</div>` : '';
   } catch {}
 }
 
@@ -222,7 +233,7 @@ function memeBox(p) {
 }
 function memeLine(p) {
   if (!p.memeName && !p.ticker) return '';
-  const why = (p.memeReasons || []).filter(r => !r.startsWith('name:')).slice(0, 3).join(' · ');
+  const why = (p.memeReasons || []).filter(r => !r.startsWith('name:') && !r.startsWith('🌐')).slice(0, 3).join(' · ');
   return `<div class="memeline">🪙 ${p.memeName ? `<b>${esc(p.memeName)}</b>` : ''}${p.ticker ? ` <span class="tk">$${esc(p.ticker)}</span>` : ''}${why ? `<span class="why">${esc(why)}</span>` : ''}</div>`;
 }
 
@@ -241,7 +252,7 @@ function card(p) {
   return `<article class="card tier-${p.tier}">
     ${media}
     <div class="body">
-      <div class="cats">${cats}</div>
+      <div class="cats"><span class="plat plat-${p.platform || 'x'}">${PLATFORM[p.platform || 'x'] || 'X'}</span>${p.cross?.length ? `<span class="plat cross">🌐 also on ${p.cross.map(c => PLATFORM[c] || c).join(' + ')}</span>` : ''} ${cats}</div>
       <p class="text">${esc(p.text.slice(0, 280))}</p>
       ${memeLine(p)}
       ${p.ai?.narrative ? `<div class="ai">${esc(p.ai.narrative)}</div>` : ''}
@@ -262,7 +273,7 @@ function card(p) {
 }
 
 async function load() {
-  const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, media: state.media });
+  const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, media: state.media, platform: state.platform });
   if (state.coinable) qs.set('minMeme', status?.memeAlertScore ?? 45);
   let posts = await fetch('api/posts?' + qs).then(r => r.json()).catch(() => []);
   if (state.freeOnly) posts = posts.filter(p => p.coin && p.coin.count === 0);

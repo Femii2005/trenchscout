@@ -52,6 +52,12 @@ app.get('/api/status', (_req, res) => {
     alertScore: config.alertScore,
     memeAlertScore: config.memeAlertScore,
     hasKey: !!config.twitterApiKey,
+    tiktok: config.scrapeCreatorsKey ? {
+      lastScan: Number(store.getMeta('lastTikTok')) || null,
+      intervalMin: config.tiktokIntervalMin,
+      credits: store.getMeta('tiktokCredits') != null ? Number(store.getMeta('tiktokCredits')) : null,
+      stats: JSON.parse(store.getMeta('lastTikTokStats') || 'null'),
+    } : null,
     telegram: !!config.telegramToken,
     ai: !!config.anthropicKey,
     demo: config.demo,

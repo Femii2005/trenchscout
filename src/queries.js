@@ -96,3 +96,16 @@ export function buildQuery(cat, lookbackHours) {
   const since = Math.floor(Date.now() / 1000 - lookbackHours * 3600);
   return `${cat.query} since_time:${since} -filter:replies -filter:nativeretweets ${NO_SHILL}${LANG ? ` lang:${LANG}` : ''}`;
 }
+
+// TikTok: one keyword search each (1 credit), sorted by most-liked from the last day.
+// TikTok search is fuzzy/semantic, so short natural phrases work best. Edit freely.
+export const TIKTOK_SEARCHES = [
+  { q: 'his name is', cat: 'named_animal' },
+  { q: 'her name is', cat: 'named_animal' },
+  { q: 'baby animal zoo', cat: 'zoo_baby' },
+  { q: 'funny animal', cat: 'animal_character' },
+  { q: 'animal rescue', cat: 'animal_rescue' },
+  { q: 'everyone keeps saying', cat: 'catchphrase' },
+  { q: 'new trend', cat: 'catchphrase' },
+  { q: 'never seen before', cat: 'weird' },
+];
