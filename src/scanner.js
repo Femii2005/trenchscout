@@ -118,7 +118,18 @@ export async function runScan() {
   return stats;
 }
 
+// Re-score every saved post with the current meme rules (so old posts and rule tweaks apply right away)
+export function rescoreAll() {
+  const posts = store.listPosts({ hours: 1e6, sort: 'new', limit: 1e9 });
+  for (const p of posts) {
+    const m = memePotential(p, p.categories || [], p.ai);
+    store.upsertPost({ ...p, platform: p.platform || 'x', meme: m.meme, memeName: m.name, ticker: m.ticker, memeReasons: m.reasons, best: bestScore(p.score ?? 0, m.meme) });
+  }
+  if (posts.length) console.log(`[scan] re-scored ${posts.length} saved posts`);
+}
+
 export function startScanner() {
+  rescoreAll();
   const every = Math.max(5, config.scanIntervalMin) * 60_000;
   setTimeout(runScan, 3000);
   setInterval(runScan, every);

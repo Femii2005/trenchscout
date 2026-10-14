@@ -30,7 +30,10 @@ const QUOTE_RE = /["“]([A-Za-z][A-Za-z' ]{2,22}[A-Za-z])["”]/;
 
 const ANIMAL_RE = new RegExp(`\\b(${ANIMALS.join('|')})s?\\b`, 'i');
 const SHILL_RE = /\$[A-Za-z][A-Za-z0-9]{1,9}\b|\bCA:|\bcontract\b|\bpump\.fun\b|\bpresale\b|\bairdrop\b|\b100x\b|\b1000x\b|\bgem\b|\bape in\b|\bsolana\b|\bmemecoin\b|\bmeme coin\b/i;
-const GRIM_RE = /\b(killed|murder(ed)?|shooting|shot dead|died|dead|death|war|bomb(ing)?|terror|crash(ed)?|election|senate|congress|lawsuit)\b/i;
+const GRIM_RE = /\b(killed|murder(ed)?|shooting|shot dead|died|dead|death|war|bomb(ing)?|terror|crash(ed)?|lawsuit|arrested|charged|police|court|sentenced|fired)\b/i;
+const NEWS_RE = /🚨|\bBREAKING\b|\bJUST IN\b|\bDEVELOPING\b|\bREPORT:/;
+const POLITICS_RE = /\b(racis\w*|nationalis\w*|democrat\w*|republican\w*|liberal\w*|conservative\w*|leftist\w*|woke|immigra\w*|illegal alien\w*|senat\w*|congress\w*|president|minister|parliament|government|election\w*|vote\w*|politic\w*)\b/i;
+const SPORTS_RE = /\b(UCL|POTM|EPL|NBA|NFL|MLB|NHL|UFC|FIFA|goal|goals|match|league|champions|Real Madrid|Barcelona|Arsenal|Chelsea|Liverpool|Man United|penalty|striker|midfielder|touchdown|playoffs?)\b|⚽|🏆/i;
 
 const ANIMAL_CATS = new Set(['named_animal', 'zoo_baby', 'animal_character', 'animal_rescue', 'cute_animal']);
 const BIG = new Set(BIG_ACCOUNTS.map(a => a.toLowerCase()));
@@ -61,18 +64,22 @@ export function memePotential(post, categories = [], ai = null) {
     const q = text.match(QUOTE_RE)?.[1];
     if (q && q.trim().split(/\s+/).length <= 4) name = q.trim();
   }
-  if (name) { s += 30; reasons.push(`name: ${name}`); }
-
   const animal = text.match(ANIMAL_RE)?.[1]?.toLowerCase();
+  const isBig = BIG.has((post.authorHandle || '').toLowerCase());
+  const isPhrase = categories.includes('catchphrase');
+  // A name only counts fully when it's a mascot (animal / catchphrase / big account), not a person in a news story
+  if (name) { s += (animal || isPhrase || isBig || ai?.name) ? 30 : 8; reasons.push(`name: ${name}`); }
   if (animal) { s += 15; reasons.push(animal); }
   if (categories.some(c => ANIMAL_CATS.has(c))) s += 10;
 
-  if (BIG.has((post.authorHandle || '').toLowerCase())) { s += 25; reasons.push(`posted by @${post.authorHandle}`); }
-  if (categories.includes('catchphrase')) { s += 15; reasons.push('catchphrase'); }
+  if (isBig) { s += 25; reasons.push(`posted by @${post.authorHandle}`); }
+  if (isPhrase) { s += 15; reasons.push('catchphrase'); }
   if (post.mediaType === 'video' || post.mediaType === 'animated_gif') s += 5;
 
   if (SHILL_RE.test(text)) { s -= 35; reasons.push('already crypto talk'); }
-  if (GRIM_RE.test(text)) { s -= 15; reasons.push('grim/news'); }
+  if (GRIM_RE.test(text) || NEWS_RE.test(text)) { s -= 20; reasons.push('news'); }
+  if (POLITICS_RE.test(text)) { s -= 30; reasons.push('politics'); }
+  if (SPORTS_RE.test(text)) { s -= 15; reasons.push('sports'); }
   if (text.length > 240) s -= 10;
 
   // Claude's read (if ANTHROPIC_API_KEY is set) is the better judge — weight it more.

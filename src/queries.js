@@ -58,14 +58,14 @@ export const CATEGORIES = [
     id: 'catchphrase',
     label: 'Catchphrases & sounds',
     emoji: '🗣️',
-    query: `("everyone is saying" OR "everyone keeps saying" OR "new slang" OR "the way he said" OR "the way she said" OR "this sound" OR "keeps saying" OR catchphrase OR "is the new") filter:videos min_faves:3000`,
-    keywords: ['everyone is saying', 'keeps saying', 'new slang', 'the way he said', 'the way she said', 'catchphrase', 'is the new'],
+    query: `("everyone is saying" OR "everyone keeps saying" OR "new slang" OR "the way he said" OR "the way she said" OR "this sound" OR "keeps saying" OR catchphrase) filter:videos min_faves:3000`,
+    keywords: ['everyone is saying', 'keeps saying', 'new slang', 'the way he said', 'the way she said', 'catchphrase'],
   },
   {
     id: 'funny',
     label: 'Funny characters',
     emoji: '😂',
-    query: `(lmao OR lmfao OR 💀 OR "this guy" OR "bro really" OR "no way" OR "im crying") filter:videos min_faves:10000`,
+    query: `(lmao OR lmfao OR 💀 OR "this guy" OR "bro really" OR "no way" OR "im crying") filter:videos min_faves:10000 -UCL -NBA -NFL -goal -match`,
     keywords: ['lmao', 'lmfao', '💀', 'this guy', 'bro really', 'im crying'],
   },
   {
@@ -79,7 +79,7 @@ export const CATEGORIES = [
     id: 'viral',
     label: 'Anything viral',
     emoji: '🔥',
-    query: 'filter:videos min_faves:30000',
+    query: 'filter:videos min_faves:30000 -UCL -NBA -NFL -goal -match -senador -senado',
     keywords: [],
   },
 ];
@@ -89,7 +89,10 @@ export const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map(c => [c.id, c]))
 // Keeps out posts that are already crypto shilling (we want the narrative BEFORE the coin).
 const NO_SHILL = '-giveaway -airdrop -presale -nft -"pump.fun" -"contract address" -"CA:"';
 
+// English only by default (where coin narratives spread). SEARCH_LANG= (empty) to search all languages.
+const LANG = process.env.SEARCH_LANG ?? 'en';
+
 export function buildQuery(cat, lookbackHours) {
   const since = Math.floor(Date.now() / 1000 - lookbackHours * 3600);
-  return `${cat.query} since_time:${since} -filter:replies -filter:nativeretweets ${NO_SHILL}`;
+  return `${cat.query} since_time:${since} -filter:replies -filter:nativeretweets ${NO_SHILL}${LANG ? ` lang:${LANG}` : ''}`;
 }
