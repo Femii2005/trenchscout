@@ -15,9 +15,9 @@ process.on('uncaughtException', e => console.error('[error]', e?.message || e));
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Optional password lock for the whole site
+// Dashboard is public (no password). Set REQUIRE_PASSWORD=1 + DASHBOARD_PASSWORD to lock it again.
 app.use((req, res, next) => {
-  if (!config.dashboardPassword || req.path === '/health') return next();
+  if (process.env.REQUIRE_PASSWORD !== '1' || !config.dashboardPassword || req.path === '/health') return next();
   const [, b64] = (req.headers.authorization || '').split(' ');
   const pass = b64 ? Buffer.from(b64, 'base64').toString().split(':').slice(1).join(':') : '';
   if (pass === config.dashboardPassword) return next();
@@ -56,7 +56,12 @@ app.get('/api/status', (_req, res) => {
   });
 });
 
+// Manual scans are limited so visitors can't burn your twitterapi.io credits.
+const SCAN_COOLDOWN_MS = 5 * 60_000;
 app.post('/api/scan', async (_req, res) => {
+  const last = Number(store.getMeta('lastScan')) || 0;
+  const waitMs = last + SCAN_COOLDOWN_MS - Date.now();
+  if (waitMs > 0) return res.status(429).json({ cooldown: true, waitMin: Math.ceil(waitMs / 60_000) });
   res.json(await runScan());
 });
 

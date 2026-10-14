@@ -256,7 +256,12 @@ document.querySelectorAll('.pills[data-key]').forEach(group => {
 $('#freeOnly').onclick = e => { state.freeOnly = !state.freeOnly; e.currentTarget.classList.toggle('on', state.freeOnly); load(); };
 $('#scanBtn').onclick = async e => {
   const b = e.currentTarget; b.disabled = true; b.textContent = 'Scanning…';
-  try { await fetch('api/scan', { method: 'POST' }); } catch {}
+  let msg = null;
+  try {
+    const r = await fetch('api/scan', { method: 'POST' });
+    if (r.status === 429) { const d = await r.json(); msg = `Next scan in ${d.waitMin}m`; }
+  } catch {}
+  if (msg) { b.textContent = msg; await new Promise(r => setTimeout(r, 2500)); }
   b.disabled = false; b.textContent = 'Scan now';
   await loadStatus(); await load();
 };
