@@ -4,292 +4,378 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Trench Scout</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<meta name="description" content="What's blowing up right now that could become a meme coin." />
+<link rel="preload" href="fonts/stencil-900.woff2" as="font" type="font/woff2" crossorigin />
 <style>
+  @font-face { font-family: 'Stencil'; src: url(fonts/stencil-900.woff2) format('woff2'); font-weight: 900; font-display: swap; }
+  @font-face { font-family: 'Shoulders'; src: url(fonts/shoulders-700.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Shoulders'; src: url(fonts/shoulders-800.woff2) format('woff2'); font-weight: 800; font-display: swap; }
+  @font-face { font-family: 'Instrument'; src: url(fonts/instrument-400.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Instrument'; src: url(fonts/instrument-500.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Instrument'; src: url(fonts/instrument-600.woff2) format('woff2'); font-weight: 600; font-display: swap; }
+
   :root {
-    --bg: #07070a;
-    --ink: #f4f1ea;
-    --muted: #8c877d;
-    --line: rgba(244, 241, 234, 0.09);
-    --card: rgba(255, 255, 255, 0.035);
-    --pill: rgba(255, 255, 255, 0.06);
-    --fire: #ff5a1f;
-    --gold: #ffc23d;
-    --green: #3ddc84;
+    --night: #0e110d;       /* trench night: olive-black */
+    --dugout: #171b15;      /* card surface */
+    --sandbag: #222820;     /* controls, raised */
+    --bone: #ece6d6;        /* primary text */
+    --moss: #8c9483;        /* secondary text */
+    --wire: rgba(236, 230, 214, 0.08);
+    --heat: #ff6b4a;        /* heat = how fast it's spreading */
+    --coin: #f2c94c;        /* meme = how coin-able */
+    --clear: #6be3a4;       /* no coin yet */
+    --radius-l: 20px;
+    --radius-s: 10px;
+    --display: 'Shoulders', 'Arial Narrow', sans-serif;
+    --body: 'Instrument', system-ui, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--bg); color: var(--ink); font-family: 'Space Grotesk', system-ui, sans-serif; }
+  html { background: var(--night); color: var(--bone); font-family: var(--body); font-size: 16px; -webkit-font-smoothing: antialiased; }
   body { min-height: 100vh; overflow-x: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--coin); outline-offset: 2px; border-radius: 6px; }
 
-  /* cinematic backdrop + vignette */
-  .bg {
-    position: fixed; inset: 0; z-index: -1;
+  /* one flare of light over the trench, grain, heavy vignette */
+  .sky { position: fixed; inset: 0; z-index: -2; pointer-events: none;
     background:
-      radial-gradient(1200px 700px at 70% -10%, rgba(255, 90, 31, 0.22), transparent 60%),
-      radial-gradient(900px 600px at -10% 30%, rgba(255, 194, 61, 0.08), transparent 60%),
-      radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.85) 100%),
-      var(--bg);
-  }
-  .grain { position: fixed; inset: 0; z-index: -1; opacity: .07; pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+      radial-gradient(60% 45% at 72% -8%, rgba(255, 140, 70, 0.22), transparent 70%),
+      radial-gradient(40% 30% at 15% 10%, rgba(242, 201, 76, 0.06), transparent 70%),
+      radial-gradient(ellipse at 50% 40%, transparent 35%, rgba(0, 0, 0, 0.75) 100%),
+      var(--night); }
+  .grain { position: fixed; inset: 0; z-index: -1; opacity: .06; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-  header { padding: 28px clamp(16px, 4vw, 48px) 0; }
-  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
-  .live { display: inline-flex; align-items: center; gap: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse 1.6s infinite; }
-  .dot.off { background: var(--muted); box-shadow: none; animation: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── top bar ── */
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0 0; font-size: 14px; color: var(--moss); }
+  .live { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .live b { color: var(--bone); font-weight: 500; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--clear); box-shadow: 0 0 10px var(--clear); flex: none; }
+  .dot.off { background: var(--moss); box-shadow: none; }
+  @media (prefers-reduced-motion: no-preference) { .dot:not(.off) { animation: pulse 2s ease-in-out infinite; } }
   @keyframes pulse { 50% { opacity: .35; } }
+  .sep { opacity: .35; }
+  .scan-btn { background: var(--bone); color: var(--night); font-weight: 600; padding: 10px 18px; border-radius: 999px; white-space: nowrap; transition: opacity .15s; }
+  .scan-btn:disabled { opacity: .55; cursor: wait; }
 
-  .wordmark {
-    font-family: 'Anton', sans-serif; text-transform: uppercase; line-height: .82;
-    font-size: clamp(84px, 19vw, 300px); letter-spacing: -0.01em;
-    margin: 18px 0 6px; user-select: none;
-    background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,.25));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  /* ── hero: the wordmark is the whole show ── */
+  .hero { padding: 28px 0 8px; }
+  .wordmark { font-family: 'Stencil', var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: -.005em;
+    font-size: clamp(64px, 13.2vw, 184px); line-height: .82; color: var(--bone); user-select: none; white-space: nowrap; }
+  .tagline { margin-top: 18px; max-width: 34em; color: var(--moss); font-size: 17px; line-height: 1.5; }
+  .tagline strong { color: var(--bone); font-weight: 500; }
+  .banner { margin-top: 18px; padding: 12px 16px; border-radius: var(--radius-s); background: rgba(242,201,76,.08); color: var(--coin); font-size: 14px; max-width: 760px; line-height: 1.45; }
+
+  /* ── filter bar ── */
+  .filters { position: sticky; top: 0; z-index: 10; margin-top: 28px; padding: 14px 0;
+    background: rgba(14, 17, 13, .88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--wire); }
+  .bar { display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; }
+  .group { display: flex; align-items: center; gap: 10px; }
+  .group > .name { font-size: 13px; color: var(--moss); }
+  .seg { display: inline-flex; background: var(--sandbag); border-radius: 999px; padding: 3px; }
+  .seg button { padding: 7px 14px; border-radius: 999px; font-size: 14px; color: var(--moss); white-space: nowrap; transition: background .15s, color .15s; }
+  .seg button:hover { color: var(--bone); }
+  .seg button[aria-pressed="true"] { background: var(--bone); color: var(--night); font-weight: 600; }
+  .spacer { flex: 1; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--moss); padding: 6px 2px; }
+  .switch .track { width: 32px; height: 18px; border-radius: 999px; background: var(--sandbag); position: relative; transition: background .15s; flex: none; }
+  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--moss); transition: transform .15s, background .15s; }
+  .switch[aria-pressed="true"] { color: var(--bone); }
+  .switch[aria-pressed="true"] .track { background: rgba(107,227,164,.25); }
+  .switch[aria-pressed="true"] .track::after { transform: translateX(14px); background: var(--clear); }
+  .switch.coin[aria-pressed="true"] .track { background: rgba(242,201,76,.25); }
+  .switch.coin[aria-pressed="true"] .track::after { background: var(--coin); }
+
+  .cats { display: flex; gap: 6px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(90deg, #000 92%, transparent); padding-right: 40px; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cats button { flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13.5px; color: var(--moss); border: 1px solid var(--wire); white-space: nowrap; }
+  .cats button:hover { color: var(--bone); border-color: rgba(236,230,214,.2); }
+  .cats button[aria-pressed="true"] { color: var(--bone); border-color: var(--bone); }
+
+  .more-btn { display: none; }
+  .count { font-size: 13px; color: var(--moss); margin: 18px 0 14px; }
+
+  /* ── feed ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; padding-bottom: 80px; }
+  .card { background: var(--dugout); border-radius: var(--radius-l); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--wire); }
+  .card:hover { border-color: rgba(236,230,214,.16); }
+  .shot { position: relative; aspect-ratio: 16 / 10; background: var(--sandbag); display: block; overflow: hidden; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
+  .shot.noimg { aspect-ratio: auto; height: 8px; }
+  .tag { position: absolute; top: 12px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(14,17,13,.78); backdrop-filter: blur(6px); }
+  .tag.plat { left: 12px; }
+  .tag.plat.tiktok { background: #fe2c55; color: #fff; }
+  .tag.age { right: 12px; font-weight: 500; color: var(--bone); }
+  .tag.age.rising { background: var(--heat); color: #1a0d08; font-weight: 600; }
+  .shot.noimg .tag { display: none; }
+
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .title { font-family: var(--display); font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: .005em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .title .tk { font-size: 18px; color: var(--coin); letter-spacing: .02em; }
+  .title.plain { font-family: var(--body); font-weight: 500; font-size: 16px; line-height: 1.45; }
+  .cross { align-self: flex-start; font-size: 12.5px; font-weight: 600; color: var(--clear); background: rgba(107,227,164,.1); padding: 4px 10px; border-radius: 999px; }
+  .caption { font-size: 14.5px; line-height: 1.5; color: #c9c4b5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .narr { font-size: 13.5px; line-height: 1.45; color: var(--moss); }
+
+  .meters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .meter .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--moss); }
+  .meter .num { font-family: var(--display); font-weight: 800; font-size: 26px; line-height: 1; color: var(--bone); font-variant-numeric: tabular-nums; }
+  .meter .rail { height: 4px; border-radius: 4px; background: var(--sandbag); margin-top: 6px; overflow: hidden; }
+  .meter .fill { height: 100%; border-radius: 4px; }
+  .meter.heat .fill { background: var(--heat); }
+  .meter.meme .fill { background: var(--coin); }
+  .meter.heat.hot .num { color: var(--heat); }
+  .meter.meme.hot .num { color: var(--coin); }
+
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--moss); }
+  .stats b { color: var(--bone); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .coinline { font-size: 13.5px; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start; }
+  .coinline::before { content: ''; width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
+  .coinline.free { color: var(--clear); }
+  .coinline.free::before { background: var(--clear); }
+  .coinline.taken { color: var(--coin); }
+  .coinline.taken::before { background: var(--coin); }
+  .coinline a { color: inherit; font-weight: 600; }
+
+  .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--wire); font-size: 13.5px; color: var(--moss); }
+  .foot .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .foot .open { color: var(--bone); font-weight: 600; text-decoration: none; white-space: nowrap; padding: 7px 14px; border-radius: 999px; background: var(--sandbag); }
+  .foot .open:hover { background: var(--bone); color: var(--night); }
+
+  .empty { grid-column: 1 / -1; text-align: center; padding: 72px 16px; color: var(--moss); }
+  .empty h2 { font-family: 'Stencil', var(--display); font-weight: 900; font-size: 56px; color: var(--bone); text-transform: uppercase; margin-bottom: 10px; }
+  .empty button { margin-top: 18px; padding: 10px 18px; border-radius: 999px; background: var(--sandbag); color: var(--bone); font-weight: 500; }
+
+  /* ── phones: main switches stay, the rest folds into "Filters" ── */
+  @media (max-width: 720px) {
+    .wrap { padding: 0 16px; }
+    .topbar .detail { display: none; }
+    .hero { padding-top: 22px; }
+    .tagline { font-size: 15.5px; }
+    .filters { padding: 10px 0 12px; }
+    .bar { gap: 10px; }
+    .group > .name { display: none; }
+    .group.where, .group.sort { width: 100%; }
+    .group.where .seg, .group.sort .seg { width: 100%; }
+    .group.where .seg button, .group.sort .seg button { flex: 1; padding: 8px 6px; }
+    .spacer { display: none; }
+    .more-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--bone); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--wire); }
+    .more-btn::after { content: ''; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+    .more-btn[aria-expanded="true"]::after { transform: translateY(1px) rotate(-135deg); }
+    .extra { display: none; width: 100%; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+    .filters.open .extra { display: flex; }
+    .filters:not(.open) .cats { display: none; }
+    .grid { grid-template-columns: 1fr; }
   }
-  .wordmark span { color: var(--fire); -webkit-text-fill-color: var(--fire); }
-  .tag { color: var(--muted); font-size: clamp(14px, 1.6vw, 18px); max-width: 560px; }
-
-  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
-  .pill {
-    border: 0; background: var(--pill); color: var(--ink); font: inherit; font-size: 14px;
-    padding: 9px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
-  }
-  .pill:hover { background: rgba(255,255,255,.12); }
-  .pill.on { background: var(--ink); color: #000; }
-  .pill.fire { background: var(--fire); color: #000; font-weight: 700; }
-  .pill.fire:disabled { opacity: .5; cursor: wait; }
-
-  .controls { position: sticky; top: 0; z-index: 5; padding: 14px clamp(16px, 4vw, 48px);
-    background: rgba(7,7,10,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--line); display: grid; gap: 10px; margin: 22px 0 18px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .row .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; margin-right: 4px; }
-  .scroll { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
-  .scroll::-webkit-scrollbar { display: none; }
-
-  main { padding: 6px clamp(16px, 4vw, 48px) 80px; }
-  .grid { columns: 4 300px; column-gap: 16px; }
-  .card { break-inside: avoid; margin-bottom: 16px; background: var(--card); border-radius: 22px; overflow: hidden;
-    border: 1px solid var(--line); transition: transform .2s, border-color .2s; }
-  .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.18); }
-  .media { position: relative; display: block; background: #111; color: var(--ink); text-decoration: none; }
-  .media img, .media video { width: 100%; display: block; max-height: 520px; object-fit: cover; }
-  .media:not(:has(img)) { min-height: 76px; background: linear-gradient(135deg, rgba(255,90,31,.18), rgba(255,255,255,.02)); }
-  .media:not(:has(img)) .chip.vid { display: none; }
-  .badge-row { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
-  .score { font-family: 'Anton'; font-size: 30px; line-height: 1; padding: 8px 12px 6px; border-radius: 14px; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); }
-  .score small { font-family: 'Space Grotesk'; font-size: 10px; display: block; letter-spacing: .14em; color: var(--muted); margin-bottom: 2px; }
-  .tier-mega .score { color: var(--fire); }
-  .tier-hot .score { color: var(--gold); }
-  .chip { font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); white-space: nowrap; }
-  .chip.heat { background: var(--fire); color: #000; font-weight: 700; }
-  .chip.vid { position: absolute; bottom: 12px; left: 12px; }
-
-  .body { padding: 14px 16px 16px; display: grid; gap: 10px; }
-  .cats { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
-  .text { font-size: 15px; line-height: 1.45; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 12px; color: var(--muted); }
-  .stats b { display: block; color: var(--ink); font-size: 15px; }
-  .vel { font-size: 13px; color: var(--muted); }
-  .vel b { color: var(--fire); }
-  .coin { font-size: 13px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.04); }
-  .coin.free { color: var(--green); background: rgba(61,220,132,.08); }
-  .coin.taken { color: var(--gold); background: rgba(255,194,61,.08); }
-  .coin a { color: inherit; }
-  .scores { display: flex; gap: 6px; }
-  .plat { font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; background: var(--pill); color: var(--ink); margin-right: 2px; }
-  .plat-tiktok { background: #fe2c55; color: #fff; }
-  .plat.cross { background: rgba(61,220,132,.15); color: var(--green); }
-  .score.meme { color: var(--muted); }
-  .score.meme.mid { color: var(--gold); }
-  .score.meme.hi { color: var(--green); }
-  .memeline { font-size: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 10px 12px; border-radius: 14px; background: rgba(255,90,31,.08); }
-  .memeline .tk { color: var(--fire); font-weight: 700; }
-  .memeline .why { flex-basis: 100%; font-size: 12px; color: var(--muted); }
-  .ai { font-size: 13px; color: #d9d4c9; border-left: 2px solid var(--fire); padding-left: 10px; }
-  .ai .tk { color: var(--fire); font-weight: 700; }
-  .foot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); gap: 8px; }
-  .foot a.open { color: #000; background: var(--ink); text-decoration: none; padding: 7px 14px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
-  .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .empty { text-align: center; padding: 80px 16px; color: var(--muted); }
-  .empty h2 { font-family: 'Anton'; font-size: 48px; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; }
-  .banner { margin: 18px 0 0; padding: 12px 16px; border-radius: 16px; background: rgba(255,194,61,.1); color: var(--gold); font-size: 14px; max-width: 760px; }
-
-  @media (max-width: 600px) {
-    .grid { columns: 1; }
-    .controls { position: static; background: none; backdrop-filter: none; border: 0; }
-    .row:not(.scroll) { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-    .row:not(.scroll)::-webkit-scrollbar { display: none; }
-    .row .pills { flex-wrap: nowrap; }
-  }
+  @media (min-width: 721px) { .extra { display: contents; } }
 </style>
 </head>
 <body>
-<div class="bg"></div><div class="grain"></div>
+<div class="sky"></div><div class="grain"></div>
 
-<header>
-  <div class="top">
-    <span class="live"><span class="dot" id="dot"></span><span id="statusText">connecting…</span></span>
-    <span class="pills">
-      <button class="pill fire" id="scanBtn">Scan now</button>
-    </span>
-  </div>
-  <h1 class="wordmark">Trench<br><span>Scout</span></h1>
-  <p class="tag">What's blowing up right now that could become a coin — ranked by speed and meme potential. Spot it before the coin exists.</p>
-  <div id="banner"></div>
-</header>
+<div class="wrap">
+  <header class="topbar">
+    <div class="live" aria-live="polite">
+      <span class="dot" id="dot"></span>
+      <span id="statusMain">Connecting</span>
+      <span class="detail" id="statusDetail"></span>
+    </div>
+    <button class="scan-btn" id="scanBtn">Scan now</button>
+  </header>
 
-<div class="controls">
-  <div class="row scroll" id="catRow"></div>
-  <div class="row">
-    <span class="label">Window</span>
-    <span class="pills" data-key="hours">
-      <button class="pill" data-v="1">1h</button>
-      <button class="pill" data-v="6">6h</button>
-      <button class="pill on" data-v="24">24h</button>
-    </span>
-    <span class="label" style="margin-left:10px">Sort</span>
-    <span class="pills" data-key="sort">
-      <button class="pill on" data-v="best">Best</button>
-      <button class="pill" data-v="meme">🪙 Meme</button>
-      <button class="pill" data-v="score">Heat</button>
-      <button class="pill" data-v="velocity">Speed</button>
-      <button class="pill" data-v="new">Newest</button>
-    </span>
-    <span class="label" style="margin-left:10px">Where</span>
-    <span class="pills" data-key="platform">
-      <button class="pill on" data-v="all">All</button>
-      <button class="pill" data-v="x">𝕏</button>
-      <button class="pill" data-v="tiktok">TikTok</button>
-    </span>
-    <span class="label" style="margin-left:10px">Show</span>
-    <span class="pills" data-key="media">
-      <button class="pill on" data-v="">All</button>
-      <button class="pill" data-v="video">Videos</button>
-      <button class="pill" data-v="photo">Photos</button>
-    </span>
-    <button class="pill" id="coinable" style="margin-left:10px">🪙 Coin-able only</button>
-    <button class="pill" id="freeOnly">🟢 No coin yet</button>
-  </div>
+  <section class="hero">
+    <h1 class="wordmark">Trench Scout</h1>
+    <p class="tagline">What's blowing up on X and TikTok right now, ranked by <strong>how fast it's spreading</strong> and <strong>how likely it is to become a coin</strong>. Find it before the ticker exists.</p>
+    <div id="banner"></div>
+  </section>
 </div>
 
-<main>
+<nav class="filters" id="filters" aria-label="Filters">
+  <div class="wrap">
+    <div class="bar">
+      <div class="group where">
+        <span class="name">Where</span>
+        <div class="seg" data-key="platform" role="group" aria-label="Platform">
+          <button data-v="all" aria-pressed="true">All</button>
+          <button data-v="x" aria-pressed="false">X</button>
+          <button data-v="tiktok" aria-pressed="false">TikTok</button>
+        </div>
+      </div>
+      <div class="group sort">
+        <span class="name">Sort</span>
+        <div class="seg" data-key="sort" role="group" aria-label="Sort">
+          <button data-v="best" aria-pressed="true" title="Hot and coin-able">Best</button>
+          <button data-v="meme" aria-pressed="false" title="Most coin-able">Meme</button>
+          <button data-v="score" aria-pressed="false" title="Spreading fastest">Heat</button>
+          <button data-v="new" aria-pressed="false">Newest</button>
+        </div>
+      </div>
+      <button class="more-btn" id="moreBtn" aria-expanded="false" aria-controls="filters">Filters <span id="moreCount"></span></button>
+      <div class="extra">
+        <div class="group">
+          <span class="name">Posted in</span>
+          <div class="seg" data-key="hours" role="group" aria-label="Posted within">
+            <button data-v="1" aria-pressed="false">1h</button>
+            <button data-v="6" aria-pressed="false">6h</button>
+            <button data-v="24" aria-pressed="true">24h</button>
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <button class="switch coin" id="coinable" aria-pressed="false"><span class="track"></span>Coin-able only</button>
+        <button class="switch" id="freeOnly" aria-pressed="false"><span class="track"></span>No coin yet</button>
+      </div>
+    </div>
+    <div class="cats" id="cats" role="group" aria-label="Category"></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" hidden><h2>Quiet</h2><p>Nothing matching right now. Widen the window or wait for the next scan.</p></div>
 </main>
 
 <script>
-const state = { category: 'all', hours: '24', sort: 'best', media: '', platform: 'all', freeOnly: false, coinable: false };
+const state = { category: 'all', hours: '24', sort: 'best', platform: 'all', freeOnly: false, coinable: false };
+const DEFAULTS = { ...state };
 let status = null;
 
 const $ = s => document.querySelector(s);
-const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : String(Math.round(n||0));
-const ago = ms => { const m = Math.max(0, Math.round((Date.now()-ms)/60000)); return m < 60 ? m+'m' : m < 1440 ? (m/60).toFixed(1)+'h' : Math.round(m/1440)+'d'; };
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(n || 0));
+const ago = ms => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
+const since = ms => Date.now() - ms < 60_000 ? 'just now' : ago(ms) + ' ago';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const PLATFORM = { x: 'X', tiktok: 'TikTok', instagram: 'Instagram', reddit: 'Reddit' };
 
 async function loadStatus() {
   try {
     status = await fetch('api/status').then(r => r.json());
-    const row = $('#catRow');
-    if (!row.children.length) {
-      row.innerHTML = `<button class="pill on" data-cat="all">All</button>` +
-        status.categories.map(c => `<button class="pill" data-cat="${c.id}">${c.emoji} ${esc(c.label)}</button>`).join('');
-      row.onclick = e => {
+    const cats = $('#cats');
+    if (!cats.children.length) {
+      cats.innerHTML = `<button data-cat="all" aria-pressed="true">Everything</button>` +
+        status.categories.map(c => `<button data-cat="${c.id}" aria-pressed="false">${c.emoji} ${esc(c.label)}</button>`).join('');
+      cats.onclick = e => {
         const b = e.target.closest('[data-cat]'); if (!b) return;
-        row.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p === b));
+        cats.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
         state.category = b.dataset.cat; load();
       };
     }
     const live = status.hasKey || status.demo;
     $('#dot').classList.toggle('off', !live);
-    let t = status.demo ? 'DEMO DATA' : status.hasKey ? 'Live' : 'Not connected';
-    if (status.lastScan) t += ` · scanned ${ago(status.lastScan)} ago`;
-    if (status.nextScan && status.hasKey) t += ` · next in ${Math.max(0, Math.round((status.nextScan - Date.now())/60000))}m`;
-    if (status.tiktok) t += ` · TikTok ${status.tiktok.lastScan ? `scanned ${ago(status.tiktok.lastScan)} ago` : 'starting'}${status.tiktok.credits != null ? ` (${status.tiktok.credits.toLocaleString()} credits left)` : ''}`;
-    if (status.telegram) t += ' · 📲 alerts on';
-    $('#statusText').textContent = t;
+    $('#statusMain').innerHTML = status.demo ? '<b>Demo data</b>' : live ? '<b>Live</b>' : '<b>Not connected</b>';
+    const bits = [];
+    if (status.lastScan) bits.push(`X scanned ${since(status.lastScan)}`);
+    if (status.tiktok) bits.push(status.tiktok.lastScan ? `TikTok ${since(status.tiktok.lastScan)}` : 'TikTok starting');
+    if (status.tiktok?.credits != null) bits.push(`${status.tiktok.credits.toLocaleString()} TikTok credits left`);
+    if (status.telegram) bits.push('Telegram alerts on');
+    $('#statusDetail').innerHTML = bits.map(b => `<span class="sep">/</span> ${esc(b)}`).join(' ');
+
+    const err = status.stats?.errors?.[0] ? ['X', status.stats.errors] : status.tiktok?.stats?.errors?.[0] ? ['TikTok', status.tiktok.stats.errors] : null;
     $('#banner').innerHTML = !status.hasKey && !status.demo
-      ? `<div class="banner">No TWITTERAPI_KEY set yet — add it in your Railway variables and the scanner starts automatically.</div>`
-      : status.stats?.errors?.length ? `<div class="banner">Last X scan had ${status.stats.errors.length} error(s): ${esc(status.stats.errors[0])}</div>`
-      : status.tiktok?.stats?.errors?.length ? `<div class="banner">Last TikTok scan had ${status.tiktok.stats.errors.length} error(s): ${esc(status.tiktok.stats.errors[0])}</div>` : '';
+      ? `<div class="banner">Scanning is off. Add TWITTERAPI_KEY in Railway's Variables and it starts on its own.</div>`
+      : err ? `<div class="banner">The last ${err[0]} scan hit ${err[1].length} error${err[1].length > 1 ? 's' : ''}: ${esc(err[1][0])}</div>` : '';
   } catch {}
+}
+
+function meter(kind, label, v, hotAt) {
+  return `<div class="meter ${kind}${v >= hotAt ? ' hot' : ''}">
+    <div class="top"><span>${label}</span><span class="num">${v ?? '–'}</span></div>
+    <div class="rail"><div class="fill" style="width:${Math.max(3, Math.min(100, v || 0))}%"></div></div>
+  </div>`;
 }
 
 function coinHtml(c) {
   if (!c) return '';
-  if (!c.count) return `<div class="coin free">🟢 No coin launched on “${esc(c.term)}” yet</div>`;
+  if (!c.count) return `<div class="coinline free">No coin on “${esc(c.term)}” yet</div>`;
   const t = c.top;
-  return `<div class="coin taken">🟡 ${c.count} coin${c.count>1?'s':''} on “${esc(c.term)}” · top <a href="${esc(t.url)}" target="_blank" rel="noopener">$${esc(t.symbol)}</a> ${esc(t.chain)} · ${fmt(t.mcap)} mcap · ${ago(t.createdAt)} old</div>`;
-}
-
-const PLATFORM = { x: 'X', tiktok: 'TikTok', instagram: 'Instagram', reddit: 'Reddit' };
-function memeBox(p) {
-  if (p.meme == null) return '';
-  const cls = p.meme >= 70 ? 'hi' : p.meme >= (status?.memeAlertScore ?? 45) ? 'mid' : 'lo';
-  return `<div class="score meme ${cls}"><small>MEME</small>${p.meme}</div>`;
-}
-function memeLine(p) {
-  if (!p.memeName && !p.ticker) return '';
-  const why = (p.memeReasons || []).filter(r => !r.startsWith('name:') && !r.startsWith('🌐')).slice(0, 3).join(' · ');
-  return `<div class="memeline">🪙 ${p.memeName ? `<b>${esc(p.memeName)}</b>` : ''}${p.ticker ? ` <span class="tk">$${esc(p.ticker)}</span>` : ''}${why ? `<span class="why">${esc(why)}</span>` : ''}</div>`;
+  return `<div class="coinline taken"><span>${c.count} coin${c.count > 1 ? 's' : ''} on “${esc(c.term)}” already. Biggest is <a href="${esc(t.url)}" target="_blank" rel="noopener">$${esc(t.symbol)}</a> at ${fmt(t.mcap)} mcap, launched ${ago(t.createdAt)} ago</span></div>`;
 }
 
 function card(p) {
-  const cats = p.categories.map(id => { const c = status?.categories.find(x => x.id === id); return c ? `${c.emoji} ${esc(c.label)}` : id; }).join(' · ');
-  const isVid = p.mediaType === 'video' || p.mediaType === 'animated_gif';
-  const media = p.mediaUrl ? `
-    <a class="media" href="${esc(p.url)}" target="_blank" rel="noopener">
-      <img loading="lazy" src="${esc(p.mediaUrl)}" alt="" onerror="this.remove()">
-      <div class="badge-row">
-        <div class="scores"><div class="score"><small>HEAT</small>${p.score}</div>${memeBox(p)}</div>
-        ${p.heatingUp ? '<span class="chip heat">⚡ heating up</span>' : `<span class="chip">${ago(p.createdAt)} old</span>`}
-      </div>
-      ${isVid ? '<span class="chip vid">▶ video</span>' : ''}
-    </a>` : `<div style="padding:14px 16px 0"><div class="scores"><span class="score" style="background:var(--pill)"><small>HEAT</small>${p.score}</span>${memeBox(p)}</div></div>`;
-  return `<article class="card tier-${p.tier}">
-    ${media}
+  const plat = p.platform || 'x';
+  const name = p.memeName;
+  const title = name || p.ticker
+    ? `<h3 class="title">${name ? esc(name) : ''}${p.ticker ? `<span class="tk">$${esc(p.ticker)}</span>` : ''}</h3>`
+    : `<h3 class="title plain">${esc(p.text.slice(0, 120)) || 'Untitled post'}</h3>`;
+  const caption = name || p.ticker ? `<p class="caption">${esc(p.text.slice(0, 260))}</p>` : '';
+  const shot = p.mediaUrl
+    ? `<a class="shot" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="Open post">
+        <img loading="lazy" src="${esc(p.mediaUrl)}" alt="" onerror="this.parentElement.classList.add('noimg');this.remove()">
+        <span class="tag plat ${plat}">${PLATFORM[plat]}</span>
+        <span class="tag age${p.heatingUp ? ' rising' : ''}">${p.heatingUp ? 'Heating up' : ago(p.createdAt) + ' old'}</span>
+      </a>`
+    : `<div class="shot noimg"></div>`;
+  return `<article class="card">
+    ${shot}
     <div class="body">
-      <div class="cats"><span class="plat plat-${p.platform || 'x'}">${PLATFORM[p.platform || 'x'] || 'X'}</span>${p.cross?.length ? `<span class="plat cross">🌐 also on ${p.cross.map(c => PLATFORM[c] || c).join(' + ')}</span>` : ''} ${cats}</div>
-      <p class="text">${esc(p.text.slice(0, 280))}</p>
-      ${memeLine(p)}
-      ${p.ai?.narrative ? `<div class="ai">${esc(p.ai.narrative)}</div>` : ''}
-      <div class="stats">
-        <div><b>${fmt(p.views)}</b>views</div>
-        <div><b>${fmt(p.likes)}</b>likes</div>
-        <div><b>${fmt(p.retweets)}</b>reposts</div>
-        <div><b>${fmt(p.replies)}</b>replies</div>
+      ${title}
+      ${p.cross?.length ? `<span class="cross">Also blowing up on ${p.cross.map(c => PLATFORM[c] || c).join(' and ')}</span>` : ''}
+      ${caption}
+      ${p.ai?.narrative ? `<p class="narr">${esc(p.ai.narrative)}</p>` : ''}
+      <div class="meters">
+        ${meter('heat', 'Heat', p.score, 70)}
+        ${meter('meme', 'Meme', p.meme, status?.memeAlertScore ?? 45)}
       </div>
-      <div class="vel"><b>${fmt(p.velocity)}</b> engagements/hr · ${fmt(p.viewsPerHour)} views/hr · ${ago(p.createdAt)} old</div>
+      <div class="stats">
+        <span><b>${fmt(p.views)}</b> views</span>
+        <span><b>${fmt(p.likes)}</b> likes</span>
+        <span><b>${fmt(p.velocity)}</b>/hr</span>
+      </div>
       ${coinHtml(p.coin)}
       <div class="foot">
-        <span class="who">@${esc(p.authorHandle)} · ${fmt(p.authorFollowers)}</span>
-        <a class="open" href="${esc(p.url)}" target="_blank" rel="noopener">Open on ${PLATFORM[p.platform || 'x'] || 'X'}</a>
+        <span class="who">@${esc(p.authorHandle)}</span>
+        <a class="open" href="${esc(p.url)}" target="_blank" rel="noopener">Open on ${PLATFORM[plat]}</a>
       </div>
     </div>
   </article>`;
 }
 
+function activeExtras() {
+  return ['hours', 'category', 'freeOnly', 'coinable'].filter(k => state[k] !== DEFAULTS[k]).length;
+}
+
 async function load() {
-  const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, media: state.media, platform: state.platform });
+  const qs = new URLSearchParams({ category: state.category, hours: state.hours, sort: state.sort, platform: state.platform });
   if (state.coinable) qs.set('minMeme', status?.memeAlertScore ?? 45);
   let posts = await fetch('api/posts?' + qs).then(r => r.json()).catch(() => []);
   if (state.freeOnly) posts = posts.filter(p => p.coin && p.coin.count === 0);
-  $('#grid').innerHTML = posts.map(card).join('');
-  $('#empty').hidden = posts.length > 0;
+  const n = activeExtras();
+  $('#moreCount').textContent = n ? `(${n})` : '';
+  $('#count').textContent = posts.length ? `${posts.length} post${posts.length > 1 ? 's' : ''} from the last ${state.hours === '1' ? 'hour' : state.hours + ' hours'}` : '';
+  $('#grid').innerHTML = posts.length ? posts.map(card).join('') : `
+    <div class="empty"><h2>All quiet</h2><p>Nothing matches these filters right now.</p><button id="resetBtn">Reset filters</button></div>`;
+  $('#resetBtn')?.addEventListener('click', resetFilters);
 }
 
-document.querySelectorAll('.pills[data-key]').forEach(group => {
-  group.onclick = e => {
-    const b = e.target.closest('.pill'); if (!b) return;
-    group.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p === b));
-    state[group.dataset.key] = b.dataset.v; load();
-  };
+function setSeg(key, v) {
+  state[key] = v;
+  document.querySelectorAll(`.seg[data-key="${key}"] button`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
+}
+function resetFilters() {
+  Object.assign(state, DEFAULTS);
+  ['platform', 'sort', 'hours'].forEach(k => setSeg(k, DEFAULTS[k]));
+  $('#coinable').setAttribute('aria-pressed', 'false');
+  $('#freeOnly').setAttribute('aria-pressed', 'false');
+  $('#cats').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === 'all'));
+  load();
+}
+
+document.querySelectorAll('.seg[data-key]').forEach(seg => {
+  seg.onclick = e => { const b = e.target.closest('button'); if (!b) return; setSeg(seg.dataset.key, b.dataset.v); load(); };
 });
-$('#coinable').onclick = e => { state.coinable = !state.coinable; e.currentTarget.classList.toggle('on', state.coinable); load(); };
-$('#freeOnly').onclick = e => { state.freeOnly = !state.freeOnly; e.currentTarget.classList.toggle('on', state.freeOnly); load(); };
+for (const id of ['coinable', 'freeOnly']) {
+  $('#' + id).onclick = e => {
+    state[id] = !state[id];
+    e.currentTarget.setAttribute('aria-pressed', state[id]);
+    load();
+  };
+}
+$('#moreBtn').onclick = e => {
+  const open = $('#filters').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', open);
+};
 $('#scanBtn').onclick = async e => {
   const b = e.currentTarget; b.disabled = true; b.textContent = 'Scanning…';
   let msg = null;

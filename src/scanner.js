@@ -172,7 +172,7 @@ export async function runTikTok() {
     const cutoff = Date.now() - config.lookbackHours * 3_600_000 * 2; // TikTok trends run a bit longer
     for (const { q, cat } of TIKTOK_SEARCHES) {
       try {
-        const posts = (await tiktokSearch(q)).filter(p => p.createdAt >= cutoff);
+        const posts = (await tiktokSearch(q)).filter(p => p.createdAt >= cutoff && p.likes >= config.tiktokMinLikes);
         stats.fetched += posts.length;
         addFound(found, posts, cat);
       } catch (e) {
@@ -185,6 +185,8 @@ export async function runTikTok() {
 
 // Re-score every saved post with the current meme rules (so old posts and rule tweaks apply right away)
 export function rescoreAll() {
+  const dropped = store.removeWhere(p => p.platform === 'tiktok' && (p.likes ?? 0) < config.tiktokMinLikes);
+  if (dropped) console.log(`[scan] removed ${dropped} small TikToks (< ${config.tiktokMinLikes} likes)`);
   const posts = store.listPosts({ hours: 1e6, sort: 'new', limit: 1e9 });
   for (const p of posts) {
     const m = memePotential(p, p.categories || [], p.ai, p.cross || [], nameSeen(p, p.memeName).known);

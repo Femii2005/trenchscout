@@ -63,6 +63,7 @@ The dashboard header shows credits left. When the same name (e.g. "Moo Deng") is
 | `SCAN_INTERVAL_MIN` | 30 | Minutes between X scans (min 5) |
 | `TIKTOK_INTERVAL_MIN` | 120 | Minutes between TikTok scans (min 30) |
 | `TIKTOK_REGION` | US | TikTok region for searches |
+| `TIKTOK_MIN_LIKES` | 20000 | Ignore TikToks with fewer likes |
 | `REQUEST_GAP_MS` | 5500 | Wait between twitterapi.io calls. Free tier needs 5000+; paid can use 500 |
 | `LOOKBACK_HOURS` | 12 | Only posts younger than this |
 | `ALERT_SCORE` | 70 | Heat score (0–100) needed for a Telegram alert |

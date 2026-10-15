@@ -97,6 +97,15 @@ export function prune(keepHours) {
   save();
 }
 
+export function removeWhere(fn) {
+  let n = 0;
+  for (const [id, p] of Object.entries(data.posts)) {
+    if (fn(p)) { delete data.posts[id]; delete data.snapshots[id]; n++; }
+  }
+  if (n) save();
+  return n;
+}
+
 export const subscribers = {
   all: () => [...data.subscribers],
   add: id => { id = String(id); if (!data.subscribers.includes(id)) { data.subscribers.push(id); save(); } },
