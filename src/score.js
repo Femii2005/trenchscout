@@ -42,6 +42,7 @@ export function scorePost(p, snapshots = [], now = Date.now()) {
   let score =
     20 * Math.log10(1 + velocity / 50) +      // 10k eng/h → ~46, 80k/h → ~64
     7 * Math.log10(1 + scaledViews / 5000);  // views boost (300k/h → ~12)
+  if (p.trending) score += 10;   // TikTok itself is pushing it on the trending feed
   if (h < 2) score += 10;        // brand new and already moving
   else if (h < 6) score += 5;
   if (accel !== null) {

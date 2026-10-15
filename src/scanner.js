@@ -1,7 +1,7 @@
 import { config } from './config.js';
 import { CATEGORIES, TIKTOK_SEARCHES, buildQuery } from './queries.js';
 import { searchTop, lookup } from './twitter.js';
-import { tiktokSearch } from './tiktok.js';
+import { tiktokSearch, tiktokTrending } from './tiktok.js';
 import { scorePost, weighted } from './score.js';
 import { categorize, guessSubject, aiRead } from './classify.js';
 import { coinCheck } from './dex.js';
@@ -169,16 +169,36 @@ export async function runTikTok() {
   if (!config.scrapeCreatorsKey) return { skipped: true, reason: 'no SCRAPECREATORS_KEY' };
   return guarded('tiktok', 'lastTikTok', async stats => {
     const found = new Map();
-    const cutoff = Date.now() - config.lookbackHours * 3_600_000 * 2; // TikTok trends run a bit longer
-    for (const { q, cat } of TIKTOK_SEARCHES) {
+    const cutoff = Date.now() - config.tiktokMaxAgeHours * 3_600_000;
+    const keep = p => p.createdAt >= cutoff && p.likes >= config.tiktokMinLikes;
+    stats.trendingRaw = 0;
+
+    // 1) The trending feed: what TikTok itself is pushing right now
+    for (const region of config.tiktokTrendingRegions) {
       try {
-        const posts = (await tiktokSearch(q)).filter(p => p.createdAt >= cutoff && p.likes >= config.tiktokMinLikes);
+        const raw = await tiktokTrending(region);
+        stats.trendingRaw += raw.length;
+        const posts = raw.filter(keep);
         stats.fetched += posts.length;
-        addFound(found, posts, cat);
+        addFound(found, posts, null); // categories come from the caption
       } catch (e) {
-        stats.errors.push(`tiktok "${q}": ${e.message}`);
+        stats.errors.push(`tiktok trending ${region}: ${e.message}`);
       }
     }
+
+    // 2) Optional coin-tuned keyword searches (TIKTOK_SEARCHES=1)
+    if (config.tiktokSearches) {
+      for (const { q, cat } of TIKTOK_SEARCHES) {
+        try {
+          const posts = (await tiktokSearch(q)).filter(keep);
+          stats.fetched += posts.length;
+          addFound(found, posts, cat);
+        } catch (e) {
+          stats.errors.push(`tiktok "${q}": ${e.message}`);
+        }
+      }
+    }
+    stats.unique = found.size;
     await processPosts(found, stats);
   });
 }
@@ -205,7 +225,10 @@ export function startScanner() {
   if (config.scrapeCreatorsKey) {
     const ttEvery = Math.max(30, config.tiktokIntervalMin) * 60_000;
     // Don't burn credits on every redeploy: only scan at boot if the last TikTok scan is older than the interval
-    const last = Number(store.getMeta('lastTikTok')) || 0;
+    // ...unless the TikTok source changed since that scan (then run right away)
+    const mode = `trending:${config.tiktokTrendingRegions.join(',')}:${config.tiktokSearches ? 'search' : ''}`;
+    const last = store.getMeta('tiktokMode') === mode ? Number(store.getMeta('lastTikTok')) || 0 : 0;
+    store.setMeta('tiktokMode', mode);
     const firstIn = Math.max(90_000, last + ttEvery - Date.now());
     setTimeout(() => { runTikTok(); setInterval(runTikTok, ttEvery); }, firstIn);
     console.log(`[scan:tiktok] every ${config.tiktokIntervalMin} min, next in ${Math.round(firstIn / 60000)} min`);

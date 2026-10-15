@@ -10,6 +10,7 @@ export function categorize(text, found = []) {
   for (const c of CATEGORIES) {
     if (c.keywords.some(k => t.includes(k))) cats.add(c.id);
   }
+  if (cats.size === 0) cats.add('viral'); // nothing matched (e.g. trending feed) → "Anything viral"
   if (cats.size > 1) cats.delete('viral'); // "viral" is only a fallback bucket
   return [...cats];
 }

@@ -9,9 +9,15 @@ export const config = {
   twitterApiKey: process.env.TWITTERAPI_KEY || '',
   // TikTok via ScrapeCreators. Scanner stays off until the key is set.
   scrapeCreatorsKey: process.env.SCRAPECREATORS_KEY || '',
-  // Minutes between TikTok scans. 120 = ~8 searches x 12/day ≈ 2,900 credits/month (~$5.50).
+  // Minutes between TikTok scans. 120 with 6 trending pulls = 72 credits/day ≈ 2,200/month (~$4).
   tiktokIntervalMin: num(process.env.TIKTOK_INTERVAL_MIN, 120),
   tiktokRegion: process.env.TIKTOK_REGION || 'US',
+  // Trending feed pulls per scan, one per entry (repeat a region to pull it more than once). 6 = 6 credits/scan.
+  tiktokTrendingRegions: (process.env.TIKTOK_TRENDING_REGIONS || 'US,US,US,GB,CA,AU').split(',').map(s => s.trim()).filter(Boolean),
+  // Also run the coin-tuned keyword searches (8 more credits/scan). Off by default.
+  tiktokSearches: process.env.TIKTOK_SEARCHES === '1',
+  // Trending videos can be a few days old; ignore anything older than this.
+  tiktokMaxAgeHours: num(process.env.TIKTOK_MAX_AGE_HOURS, 48),
   // Ignore TikToks below this many likes (search returns lots of small videos)
   tiktokMinLikes: num(process.env.TIKTOK_MIN_LIKES, 20000),
 

@@ -22,7 +22,15 @@ async function call(path, params, attempt = 1) {
   return data;
 }
 
-// Most-liked videos from the last day for a search term.
+// What TikTok is pushing as trending right now (1 credit per call). Each call returns a fresh batch,
+// so we pull several per scan. Region = which country's trending feed.
+export async function tiktokTrending(region) {
+  const data = await call('/v1/tiktok/get-trending-feed', { region });
+  const items = data.aweme_list || data.items || data.search_item_list || [];
+  return items.map(it => normalize(it.aweme_info || it)).filter(Boolean).map(p => ({ ...p, trending: true }));
+}
+
+// Optional: most-liked videos from the last day for a search term.
 export async function tiktokSearch(query) {
   const data = await call('/v1/tiktok/search/keyword', {
     query,
@@ -41,7 +49,7 @@ function normalize(v) {
   if (!id) return null;
   const st = v.statistics || v.stats || {};
   const a = v.author || {};
-  const handle = a.unique_id || a.uniqueId || '';
+  const handle = a.unique_id || a.uniqueId || a.nickname || '';
   const created = Number(v.create_time || v.createTime) * 1000;
   return {
     id: `tt_${id}`,
@@ -61,7 +69,7 @@ function normalize(v) {
     authorFollowers: a.follower_count ?? a.followerCount ?? 0,
     hashtags: (v.text_extra || []).map(t => t.hashtag_name).filter(Boolean),
     mediaType: 'video',
-    mediaUrl: firstUrl(v.video?.cover) || firstUrl(v.video?.origin_cover) || firstUrl(v.video?.dynamic_cover) || null,
+    mediaUrl: firstUrl(v.video?.cover) || firstUrl(v.video?.origin_cover) || firstUrl(v.video?.dynamic_cover) || firstUrl(v.video?.ai_dynamic_cover) || null,
     videoUrl: null,
   };
 }
