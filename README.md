@@ -53,7 +53,7 @@ TikTok uses [ScrapeCreators](https://scrapecreators.com) (1 credit per call, $47
 1. Sign up, copy your API key.
 2. Railway → Variables → add `SCRAPECREATORS_KEY=your_key`.
 
-Every 2 hours it pulls **TikTok's trending feed** (`/v1/tiktok/get-trending-feed`): what TikTok itself is pushing right now. It makes 6 pulls across US, GB, CA and AU (6 credits per scan, about $4/month), keeps videos with 20K+ likes from the last 2 days, and runs them through the same heat and meme scoring. Trending videos get a small heat bonus.
+Every 2 hours it pulls **TikTok's trending feed** (`/v1/tiktok/get-trending-feed`): what TikTok itself is pushing right now. It makes 6 pulls across US, GB, CA and AU (6 credits per scan, about $4/month), keeps videos with 20K+ likes from the last 7 days (the feed recirculates older hits), and runs them through the same heat and meme scoring. Trending videos get a small heat bonus.
 
 Want more coin-specific TikToks too? Set `TIKTOK_SEARCHES=1` to also run the keyword searches in `src/queries.js` (8 more credits per scan).
 When the same name (e.g. "Moo Deng") is blowing up on TikTok **and** X, it gets a 🌐 cross-platform boost.
@@ -66,7 +66,7 @@ When the same name (e.g. "Moo Deng") is blowing up on TikTok **and** X, it gets 
 | `TIKTOK_INTERVAL_MIN` | 120 | Minutes between TikTok scans (min 30) |
 | `TIKTOK_TRENDING_REGIONS` | US,US,US,GB,CA,AU | One trending-feed pull per entry |
 | `TIKTOK_SEARCHES` | off | `1` = also run coin-tuned keyword searches |
-| `TIKTOK_MAX_AGE_HOURS` | 48 | Ignore older TikToks |
+| `TIKTOK_MAX_AGE_HOURS` | 168 | Ignore older TikToks |
 | `TIKTOK_REGION` | US | Region for keyword searches |
 | `TIKTOK_MIN_LIKES` | 20000 | Ignore TikToks with fewer likes |
 | `REQUEST_GAP_MS` | 5500 | Wait between twitterapi.io calls. Free tier needs 5000+; paid can use 500 |
@@ -75,7 +75,7 @@ When the same name (e.g. "Moo Deng") is blowing up on TikTok **and** X, it gets 
 | `MEME_ALERT_SCORE` | 45 | Meme potential (0–100) also needed for an alert |
 | `BIG_ACCOUNTS` | elonmusk,MrBeast,SnoopDogg,cb_doge,DogeDesigner | Accounts watched in the ⭐ Big accounts category |
 | `RECHECK_LIMIT` | 25 | Top posts re-checked each scan to detect "heating up" |
-| `KEEP_HOURS` | 72 | Older posts get deleted |
+| `KEEP_HOURS` | 192 | Older posts get deleted |
 | `TELEGRAM_CHAT_IDS` | – | Extra chats/groups that always get alerts (comma-separated) |
 | `ANTHROPIC_MODEL` | claude-haiku-5-5 | Model for the narrative/ticker line |
 | `DEMO` | – | `1` = fake sample posts, no API key needed |

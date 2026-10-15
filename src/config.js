@@ -16,8 +16,8 @@ export const config = {
   tiktokTrendingRegions: (process.env.TIKTOK_TRENDING_REGIONS || 'US,US,US,GB,CA,AU').split(',').map(s => s.trim()).filter(Boolean),
   // Also run the coin-tuned keyword searches (8 more credits/scan). Off by default.
   tiktokSearches: process.env.TIKTOK_SEARCHES === '1',
-  // Trending videos can be a few days old; ignore anything older than this.
-  tiktokMaxAgeHours: num(process.env.TIKTOK_MAX_AGE_HOURS, 48),
+  // TikTok's trending feed recirculates older hits (median ~5 weeks old); keep the last week.
+  tiktokMaxAgeHours: num(process.env.TIKTOK_MAX_AGE_HOURS, 168),
   // Ignore TikToks below this many likes (search returns lots of small videos)
   tiktokMinLikes: num(process.env.TIKTOK_MIN_LIKES, 20000),
 
@@ -31,7 +31,7 @@ export const config = {
   // How many top posts to re-check each scan to measure acceleration.
   recheckLimit: num(process.env.RECHECK_LIMIT, 25),
   // Drop posts older than this from the database.
-  keepHours: num(process.env.KEEP_HOURS, 72),
+  keepHours: num(process.env.KEEP_HOURS, 192),
 
   // Telegram
   telegramToken: process.env.TELEGRAM_BOT_TOKEN || '',

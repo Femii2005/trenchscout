@@ -221,7 +221,7 @@
             <button data-v="1" aria-pressed="false">1h</button>
             <button data-v="6" aria-pressed="false">6h</button>
             <button data-v="24" aria-pressed="true">24h</button>
-            <button data-v="48" aria-pressed="false">2d</button>
+            <button data-v="168" aria-pressed="false">7d</button>
           </div>
         </div>
         <span class="spacer"></span>
@@ -344,7 +344,7 @@ async function load() {
   if (state.freeOnly) posts = posts.filter(p => p.coin && p.coin.count === 0);
   const n = activeExtras();
   $('#moreCount').textContent = n ? `(${n})` : '';
-  $('#count').textContent = posts.length ? `${posts.length} post${posts.length > 1 ? 's' : ''} from the last ${({ '1': 'hour', '6': '6 hours', '24': '24 hours', '48': '2 days' })[state.hours]}` : '';
+  $('#count').textContent = posts.length ? `${posts.length} post${posts.length > 1 ? 's' : ''} from the last ${({ '1': 'hour', '6': '6 hours', '24': '24 hours', '168': '7 days' })[state.hours]}` : '';
   $('#grid').innerHTML = posts.length ? posts.map(card).join('') : `
     <div class="empty"><h2>All quiet</h2><p>Nothing matches these filters right now.</p><button id="resetBtn">Reset filters</button></div>`;
   $('#resetBtn')?.addEventListener('click', resetFilters);
