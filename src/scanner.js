@@ -178,6 +178,14 @@ export async function runTikTok() {
       try {
         const raw = await tiktokTrending(region);
         stats.trendingRaw += raw.length;
+        // diagnostics: why videos get dropped
+        const now = Date.now();
+        for (const p of raw) {
+          if (p.createdAt < cutoff) stats.tooOld = (stats.tooOld || 0) + 1;
+          else if (p.likes < config.tiktokMinLikes) stats.tooSmall = (stats.tooSmall || 0) + 1;
+          (stats._likes ||= []).push(p.likes);
+          (stats._ages ||= []).push(Math.round((now - p.createdAt) / 3_600_000));
+        }
         const posts = raw.filter(keep);
         stats.fetched += posts.length;
         addFound(found, posts, null); // categories come from the caption
@@ -199,6 +207,11 @@ export async function runTikTok() {
       }
     }
     stats.unique = found.size;
+    const med = a => (a?.length ? [...a].sort((x, y) => x - y)[a.length >> 1] : null);
+    stats.medianLikes = med(stats._likes);
+    stats.medianAgeHours = med(stats._ages);
+    stats.likesOver20k = (stats._likes || []).filter(l => l >= 20000).length;
+    delete stats._likes; delete stats._ages;
     await processPosts(found, stats);
   });
 }

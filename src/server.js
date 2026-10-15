@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { CATEGORIES } from './queries.js';
 import * as store from './db.js';
-import { runScan, startScanner } from './scanner.js';
+import { runScan, runTikTok, startScanner } from './scanner.js';
 import { startBot } from './telegram.js';
 import { seedDemo } from './demo.js';
 
@@ -67,6 +67,14 @@ app.get('/api/status', (_req, res) => {
 
 // Manual scans are limited so visitors can't burn your twitterapi.io credits.
 const SCAN_COOLDOWN_MS = 5 * 60_000;
+// TikTok costs credits, so manual TikTok scans are limited to one per 30 minutes.
+app.post('/api/scan/tiktok', async (_req, res) => {
+  const last = Number(store.getMeta('lastTikTok')) || 0;
+  const waitMs = last + 30 * 60_000 - Date.now();
+  if (waitMs > 0) return res.status(429).json({ cooldown: true, waitMin: Math.ceil(waitMs / 60_000) });
+  res.json(await runTikTok());
+});
+
 app.post('/api/scan', async (_req, res) => {
   const last = Number(store.getMeta('lastScan')) || 0;
   const waitMs = last + SCAN_COOLDOWN_MS - Date.now();
